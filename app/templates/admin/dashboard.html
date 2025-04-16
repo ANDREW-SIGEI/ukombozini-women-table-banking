@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - Ukombozini Management System{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1 class="dashboard-title">Administrator Dashboard</h1>
+    <p class="text-muted">Welcome back, {{ current_user.name }}</p>
+
+    <!-- Overview Stats Cards -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card overview-card">
+                <div class="card-body">
+                    <h5 class="card-title">Field Officers</h5>
+                    <h2 id="fieldOfficerCount">0</h2>
+                    <p>Active officers managing groups</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card overview-card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Groups</h5>
+                    <h2 id="totalGroupsCount">0</h2>
+                    <p>Registered across all regions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card overview-card">
+                <div class="card-body">
+                    <h5 class="card-title">Weekly Meetings</h5>
+                    <h2 id="weeklyMeetingsCount">0</h2>
+                    <p>Scheduled for this week</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card overview-card">
+                <div class="card-body">
+                    <h5 class="card-title">Unassigned Groups</h5>
+                    <h2 id="unassignedGroupsCount">0</h2>
+                    <p>Need officer assignment</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="row mt-4">
+        <!-- Field Officers Table -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Field Officers</h5>
+                    <div class="d-flex">
+                        <input type="text" id="officerFilter" class="form-control form-control-sm mr-2 search-input" 
+                               placeholder="Search officers..." data-target="fieldOfficersTable">
+                        <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#addOfficerModal">
+                            <i class="fas fa-plus"></i> Add Officer
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="fieldOfficersTable">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Region</th>
+                                    <th>Groups</th>
+                                    <th>Performance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Logs -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Activity Logs</h5>
+                </div>
+                <div class="card-body">
+                    <div class="activity-logs" id="activityLogsList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Second Content Row -->
+    <div class="row mt-4">
+        <!-- Unassigned Groups -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Unassigned Groups</h5>
+                    <div>
+                        <input type="text" class="form-control form-control-sm search-input" 
+                               placeholder="Search groups..." data-target="unassignedGroupsTable">
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="unassignedGroupsTable">
+                            <thead>
+                                <tr>
+                                    <th>Group Name</th>
+                                    <th>Location</th>
+                                    <th>Members</th>
+                                    <th>Created</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Rotations -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Upcoming Rotations</h5>
+                    <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#scheduleRotationModal">
+                        <i class="fas fa-exchange-alt"></i> Schedule Rotation
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="upcomingRotationsList">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Charts -->
+    <div class="row mt-4">
+        <!-- Officer Performance Chart -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Officer Performance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="officerPerformanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meeting Attendance Chart -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Meeting Attendance Trends</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="meetingAttendanceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Officer Modal -->
+    <div class="modal fade" id="addOfficerModal" tabindex="-1" role="dialog" aria-labelledby="addOfficerModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addOfficerModalLabel">Add New Field Officer</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="addOfficerForm">
+                        <div class="form-group">
+                            <label for="officerName">Full Name</label>
+                            <input type="text" class="form-control" id="officerName" name="officerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="officerEmail">Email Address</label>
+                            <input type="email" class="form-control" id="officerEmail" name="officerEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="officerPhone">Phone Number</label>
+                            <input type="tel" class="form-control" id="officerPhone" name="officerPhone" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="officerRegion">Region</label>
+                            <select class="form-control" id="officerRegion" name="officerRegion" required>
+                                <option value="">Select Region</option>
+                                <option value="Nairobi">Nairobi</option>
+                                <option value="Mombasa">Mombasa</option>
+                                <option value="Kisumu">Kisumu</option>
+                                <option value="Nakuru">Nakuru</option>
+                                <option value="Eldoret">Eldoret</option>
+                            </select>
+                        </div>
+                        <div class="form-group text-right">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Add Officer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Group Modal -->
+    <div class="modal fade" id="assignGroupModal" tabindex="-1" role="dialog" aria-labelledby="assignGroupModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignGroupModalLabel">Assign Group to Field Officer</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="assignGroupForm">
+                        <div class="form-group">
+                            <label for="fieldOfficer">Field Officer</label>
+                            <select class="form-control" id="fieldOfficer" name="fieldOfficer" required>
+                                <option value="">Select Field Officer</option>
+                                <option value="1">John Doe</option>
+                                <option value="2">Jane Smith</option>
+                                <option value="3">Robert Johnson</option>
+                                <option value="4">Emily Davis</option>
+                                <option value="5">Michael Brown</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="group">Group</label>
+                            <select class="form-control" id="group" name="group" required>
+                                <option value="">Select Group</option>
+                                <option value="1">Umoja Women Group</option>
+                                <option value="2">Amani Youth Cooperative</option>
+                                <option value="3">Tujenge Farmers Association</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="startDate">Start Date</label>
+                            <input type="date" class="form-control" id="startDate" name="startDate" required>
+                        </div>
+                        <div class="form-group text-right">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Assign Group</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Rotation Modal -->
+    <div class="modal fade" id="scheduleRotationModal" tabindex="-1" role="dialog" aria-labelledby="scheduleRotationModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scheduleRotationModalLabel">Schedule Officer Rotation</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="scheduleRotationForm">
+                        <div class="form-group">
+                            <label for="fromOfficer">Current Field Officer</label>
+                            <select class="form-control" id="fromOfficer" name="fromOfficer" required>
+                                <option value="">Select Current Officer</option>
+                                <option value="1">John Doe</option>
+                                <option value="2">Jane Smith</option>
+                                <option value="3">Robert Johnson</option>
+                                <option value="4">Emily Davis</option>
+                                <option value="5">Michael Brown</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="toOfficer">New Field Officer</label>
+                            <select class="form-control" id="toOfficer" name="toOfficer" required>
+                                <option value="">Select New Officer</option>
+                                <option value="1">John Doe</option>
+                                <option value="2">Jane Smith</option>
+                                <option value="3">Robert Johnson</option>
+                                <option value="4">Emily Davis</option>
+                                <option value="5">Michael Brown</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="rotationGroup">Group</label>
+                            <select class="form-control" id="rotationGroup" name="rotationGroup" required>
+                                <option value="">Select Group</option>
+                                <option value="1">Umoja Women Group</option>
+                                <option value="2">Amani Youth Cooperative</option>
+                                <option value="3">Tujenge Farmers Association</option>
+                                <option value="4">Upendo Savings Group</option>
+                                <option value="5">Maendeleo Farmers</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="rotationDate">Effective Date</label>
+                            <input type="date" class="form-control" id="rotationDate" name="rotationDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="rotationReason">Reason for Rotation</label>
+                            <textarea class="form-control" id="rotationReason" name="rotationReason" rows="3"></textarea>
+                        </div>
+                        <div class="form-group text-right">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Schedule Rotation</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin_dashboard.js') }}"></script>
+{% endblock %} 

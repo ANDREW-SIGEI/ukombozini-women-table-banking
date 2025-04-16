@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+
+{% block title %}School Fees Collections{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">School Fees Collections</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+        <li class="breadcrumb-item active">School Fees Collections</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-md-6">
+                    <i class="fas fa-table me-1"></i> School Fees Collections
+                </div>
+                <div class="col-md-6 text-end">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCollectionModal" aria-label="Add new collection">
+                        <i class="fas fa-plus"></i> Add Collection
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <form id="filterForm" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="groupFilter" class="form-label">Group</label>
+                            <select class="form-select" id="groupFilter" name="group_id">
+                                <option value="">All Groups</option>
+                                {% for group in groups %}
+                                <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="termFilter" class="form-label">Term</label>
+                            <select class="form-select" id="termFilter" name="term">
+                                <option value="">All Terms</option>
+                                <option value="Term 1">Term 1</option>
+                                <option value="Term 2">Term 2</option>
+                                <option value="Term 3">Term 3</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="yearFilter" class="form-label">Year</label>
+                            <select class="form-select" id="yearFilter" name="year">
+                                <option value="">All Years</option>
+                                {% for year in range(2023, 2031) %}
+                                <option value="{{ year }}">{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">Filter</button>
+                            <button type="reset" class="btn btn-secondary">Reset</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="schoolFeesTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Member</th>
+                            <th>Group</th>
+                            <th>Student Name</th>
+                            <th>School</th>
+                            <th>Term</th>
+                            <th>Year</th>
+                            <th>Amount Saved</th>
+                            <th>Loan Amount</th>
+                            <th>Total Paid</th>
+                            <th>Remaining Balance</th>
+                            <th>Status</th>
+                            <th>Payment Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for collection in collections %}
+                        <tr>
+                            <td>{{ collection.user.name }}</td>
+                            <td>{{ collection.group.name }}</td>
+                            <td>{{ collection.student_name }}</td>
+                            <td>{{ collection.school_name }}</td>
+                            <td>{{ collection.term }}</td>
+                            <td>{{ collection.year }}</td>
+                            <td>KES {{ "{:,.2f}".format(collection.amount_saved) }}</td>
+                            <td>KES {{ "{:,.2f}".format(collection.loan_amount) }}</td>
+                            <td>KES {{ "{:,.2f}".format(collection.total_paid) }}</td>
+                            <td>KES {{ "{:,.2f}".format(collection.remaining_balance) }}</td>
+                            <td>
+                                <span class="badge bg-{% if collection.status == 'paid' %}success{% elif collection.status == 'partial' %}warning{% else %}danger{% endif %}">
+                                    {{ collection.status|title }}
+                                </span>
+                            </td>
+                            <td>{% if collection.payment_date %}{{ collection.payment_date.strftime('%Y-%m-%d') }}{% else %}N/A{% endif %}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-primary" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#editCollectionModal" 
+                                            data-id="{{ collection.id }}"
+                                            aria-label="Edit collection">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    {% if collection.status != 'paid' %}
+                                    <button type="button" class="btn btn-sm btn-success" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#paymentModal" 
+                                            data-id="{{ collection.id }}"
+                                            data-amount="{{ collection.remaining_balance }}"
+                                            aria-label="Record payment">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-sm btn-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal" 
+                                            data-id="{{ collection.id }}"
+                                            data-name="{{ collection.student_name }}"
+                                            aria-label="Delete collection">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Collection Modal -->
+<div class="modal fade" id="addCollectionModal" tabindex="-1" aria-labelledby="addCollectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCollectionModalLabel">Add New School Fees Collection</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCollectionForm" action="{{ url_for('api.create_school_fees_collection') }}" method="POST">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="user_id" class="form-label">Member</label>
+                            <select class="form-select" id="user_id" name="user_id" required>
+                                <option value="">Select Member</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="group_id" class="form-label">Group</label>
+                            <select class="form-select" id="group_id" name="group_id" required>
+                                <option value="">Select Group</option>
+                                {% for group in groups %}
+                                <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="student_name" class="form-label">Student Name</label>
+                            <input type="text" class="form-control" id="student_name" name="student_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="school_name" class="form-label">School Name</label>
+                            <input type="text" class="form-control" id="school_name" name="school_name" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="term" class="form-label">Term</label>
+                            <select class="form-select" id="term" name="term" required>
+                                <option value="">Select Term</option>
+                                <option value="Term 1">Term 1</option>
+                                <option value="Term 2">Term 2</option>
+                                <option value="Term 3">Term 3</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="year" class="form-label">Year</label>
+                            <select class="form-select" id="year" name="year" required>
+                                <option value="">Select Year</option>
+                                {% for year in range(2023, 2031) %}
+                                <option value="{{ year }}">{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="pending">Pending</option>
+                                <option value="partial">Partial Payment</option>
+                                <option value="paid">Paid</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="amount_saved" class="form-label">Amount Saved (KES)</label>
+                            <input type="number" class="form-control" id="amount_saved" name="amount_saved" min="0" step="0.01" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="loan_amount" class="form-label">Loan Amount (KES)</label>
+                            <input type="number" class="form-control" id="loan_amount" name="loan_amount" min="0" step="0.01" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="payment_date" class="form-label">Payment Date</label>
+                            <input type="date" class="form-control" id="payment_date" name="payment_date">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Save Collection</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Collection Modal -->
+<div class="modal fade" id="editCollectionModal" tabindex="-1" aria-labelledby="editCollectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCollectionModalLabel">Edit School Fees Collection</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCollectionForm" action="{{ url_for('api.update_school_fees_collection') }}" method="POST">
+                    <input type="hidden" id="edit_id" name="id">
+                    <!-- Same form fields as Add Collection Modal -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_user_id" class="form-label">Member</label>
+                            <select class="form-select" id="edit_user_id" name="user_id" required>
+                                <option value="">Select Member</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_group_id" class="form-label">Group</label>
+                            <select class="form-select" id="edit_group_id" name="group_id" required>
+                                <option value="">Select Group</option>
+                                {% for group in groups %}
+                                <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_student_name" class="form-label">Student Name</label>
+                            <input type="text" class="form-control" id="edit_student_name" name="student_name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_school_name" class="form-label">School Name</label>
+                            <input type="text" class="form-control" id="edit_school_name" name="school_name" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="edit_term" class="form-label">Term</label>
+                            <select class="form-select" id="edit_term" name="term" required>
+                                <option value="">Select Term</option>
+                                <option value="Term 1">Term 1</option>
+                                <option value="Term 2">Term 2</option>
+                                <option value="Term 3">Term 3</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="edit_year" class="form-label">Year</label>
+                            <select class="form-select" id="edit_year" name="year" required>
+                                <option value="">Select Year</option>
+                                {% for year in range(2023, 2031) %}
+                                <option value="{{ year }}">{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="edit_status" class="form-label">Status</label>
+                            <select class="form-select" id="edit_status" name="status" required>
+                                <option value="pending">Pending</option>
+                                <option value="partial">Partial Payment</option>
+                                <option value="paid">Paid</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="edit_amount_saved" class="form-label">Amount Saved (KES)</label>
+                            <input type="number" class="form-control" id="edit_amount_saved" name="amount_saved" min="0" step="0.01" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="edit_loan_amount" class="form-label">Loan Amount (KES)</label>
+                            <input type="number" class="form-control" id="edit_loan_amount" name="loan_amount" min="0" step="0.01" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="edit_payment_date" class="form-label">Payment Date</label>
+                            <input type="date" class="form-control" id="edit_payment_date" name="payment_date">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="edit_notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Update Collection</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentModalLabel">Record Payment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm" action="{{ url_for('api.record_school_fees_payment') }}" method="POST">
+                    <input type="hidden" id="payment_collection_id" name="id">
+                    <div class="mb-3">
+                        <label for="payment_amount" class="form-label">Payment Amount (KES)</label>
+                        <input type="number" class="form-control" id="payment_amount" name="amount" min="0" step="0.01" required>
+                        <small class="form-text text-muted">Remaining balance: <span id="remaining_balance"></span></small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment_date" class="form-label">Payment Date</label>
+                        <input type="date" class="form-control" id="payment_date" name="payment_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">Payment Method</label>
+                        <select class="form-select" id="payment_method" name="payment_method" required>
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="mobile_money">Mobile Money</option>
+                            <option value="check">Check</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment_reference" class="form-label">Reference Number</label>
+                        <input type="text" class="form-control" id="payment_reference" name="reference_number">
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success">Submit Payment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the school fees collection for <span id="delete_name"></span>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" action="{{ url_for('api.delete_school_fees_collection') }}" method="POST">
+                    <input type="hidden" id="delete_id" name="id">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize datatable
+        $('#schoolFeesTable').DataTable({
+            responsive: true,
+            ordering: true,
+            paging: true,
+            pageLength: 10,
+            language: {
+                search: "Search:",
+                lengthMenu: "Show _MENU_ entries per page",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                infoEmpty: "Showing 0 to 0 of 0 entries",
+                infoFiltered: "(filtered from _MAX_ total entries)"
+            }
+        });
+
+        // Current date for payment date fields
+        document.getElementById('payment_date').valueAsDate = new Date();
+
+        // Handle payment modal
+        $('#paymentModal').on('show.bs.modal', function (event) {
+            const button = $(event.relatedTarget);
+            const id = button.data('id');
+            const amount = button.data('amount');
+            
+            $('#payment_collection_id').val(id);
+            $('#remaining_balance').text('KES ' + amount.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
+            $('#payment_amount').val(amount);
+            $('#payment_amount').attr('max', amount);
+        });
+
+        // Handle edit modal
+        $('#editCollectionModal').on('show.bs.modal', function (event) {
+            const button = $(event.relatedTarget);
+            const id = button.data('id');
+            
+            // In a real application, fetch the collection data via AJAX
+            fetch(`/api/school_fees_collection/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const collection = data.collection;
+                        $('#edit_id').val(collection.id);
+                        $('#edit_user_id').val(collection.user_id);
+                        $('#edit_group_id').val(collection.group_id);
+                        $('#edit_student_name').val(collection.student_name);
+                        $('#edit_school_name').val(collection.school_name);
+                        $('#edit_term').val(collection.term);
+                        $('#edit_year').val(collection.year);
+                        $('#edit_status').val(collection.status);
+                        $('#edit_amount_saved').val(collection.amount_saved);
+                        $('#edit_loan_amount').val(collection.loan_amount);
+                        $('#edit_payment_date').val(collection.payment_date);
+                        $('#edit_notes').val(collection.notes);
+                    }
+                })
+                .catch(error => console.error('Error fetching collection data:', error));
+        });
+
+        // Handle delete modal
+        $('#deleteModal').on('show.bs.modal', function (event) {
+            const button = $(event.relatedTarget);
+            const id = button.data('id');
+            const name = button.data('name');
+            
+            $('#delete_id').val(id);
+            $('#delete_name').text(name);
+        });
+    });
+</script>
+{% endblock %} 

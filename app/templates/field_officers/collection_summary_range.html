@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}Date Range Collection Summary - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('field_officers_web.list_officers') }}">Field Officers</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('field_officers_web.collection_summary') }}">Collection Summary</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Date Range Report</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Date Range Collection Summary</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('field_officers_web.collection_summary_range') }}" method="GET" class="mb-4">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label for="from_date" class="form-label">From Date</label>
+                                <input type="date" class="form-control" id="from_date" name="from_date" value="{{ from_date }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="to_date" class="form-label">To Date</label>
+                                <input type="date" class="form-control" id="to_date" name="to_date" value="{{ to_date }}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="officer_id" class="form-label">Field Officer</label>
+                                <select class="form-select" id="officer_id" name="officer_id">
+                                    <option value="">All Officers</option>
+                                    {% for officer in officers %}
+                                    <option value="{{ officer.id }}" {% if selected_officer_id|int == officer.id %}selected{% endif %}>
+                                        {{ officer.first_name }} {{ officer.last_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">Generate Report</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    {% if summary_data %}
+                        <div class="alert alert-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>{{ summary_data['Date Range'] }}</h5>
+                                    <p class="mb-1">Days in Range: {{ summary_data['Days in Range'] }}</p>
+                                    <p class="mb-1">Days with Collections: {{ summary_data['Days with Collections'] }}</p>
+                                    <p class="mb-1">Collection Rate: {{ "%.2f"|format(summary_data['Collection Rate']) }}%</p>
+                                </div>
+                                <div class="col-md-6 text-md-end">
+                                    <h5>Total Collection: {{ "{:,.2f}".format(summary_data['Totals']['Total Amount Collected']) }}</h5>
+                                    <p class="mb-1">Total Groups Attended: {{ summary_data['Total Groups Attended'] }}</p>
+                                    <div class="btn-group mt-2">
+                                        <a href="{{ url_for('field_officers_web.collection_summary_range', from_date=from_date, to_date=to_date, officer_id=selected_officer_id, export='excel') }}" 
+                                           class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-file-excel me-1"></i> Export to Excel
+                                        </a>
+                                        <a href="{{ url_for('field_officers_web.collection_summary_range', from_date=from_date, to_date=to_date, officer_id=selected_officer_id, export='pdf') }}" 
+                                           class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-file-pdf me-1"></i> Export to PDF
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Collection Summary Charts -->
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Collection Breakdown</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="collectionBreakdownChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Top Performing Officers</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <canvas id="officerPerformanceChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Collection Breakdown -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Collection Details</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Collection Type</th>
+                                                        <th class="text-end">Amount</th>
+                                                        <th class="text-end">Percentage</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% set total = summary_data['Totals']['Total Amount Collected'] %}
+                                                    <tr>
+                                                        <td>Service Fee</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(summary_data['Totals']['Service Fee']) }}</td>
+                                                        <td class="text-end">{{ "%.2f"|format(summary_data['Totals']['Service Fee'] / total * 100 if total else 0) }}%</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Project Registration Fee</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(summary_data['Totals']['Project Registration Fee']) }}</td>
+                                                        <td class="text-end">{{ "%.2f"|format(summary_data['Totals']['Project Registration Fee'] / total * 100 if total else 0) }}%</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Member Registration Fee</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(summary_data['Totals']['Member Registration Fee']) }}</td>
+                                                        <td class="text-end">{{ "%.2f"|format(summary_data['Totals']['Member Registration Fee'] / total * 100 if total else 0) }}%</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Ukombozini Loan Collection</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(summary_data['Totals']['Ukombozini Loan Collection']) }}</td>
+                                                        <td class="text-end">{{ "%.2f"|format(summary_data['Totals']['Ukombozini Loan Collection'] / total * 100 if total else 0) }}%</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Ukombozini Project Amount</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(summary_data['Totals']['Ukombozini Project Amount']) }}</td>
+                                                        <td class="text-end">{{ "%.2f"|format(summary_data['Totals']['Ukombozini Project Amount'] / total * 100 if total else 0) }}%</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Welfare Total</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(summary_data['Totals']['Welfare Total']) }}</td>
+                                                        <td class="text-end">{{ "%.2f"|format(summary_data['Totals']['Welfare Total'] / total * 100 if total else 0) }}%</td>
+                                                    </tr>
+                                                    <tr class="table-dark">
+                                                        <th>Total</th>
+                                                        <th class="text-end">{{ "{:,.2f}".format(total) }}</th>
+                                                        <th class="text-end">100.00%</th>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Officer Performance -->
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Officer Performance</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Officer</th>
+                                                        <th class="text-end">Total Collected</th>
+                                                        <th class="text-center">Groups Attended</th>
+                                                        <th class="text-center">Days Active</th>
+                                                        <th class="text-end">Avg per Day</th>
+                                                        <th class="text-end">Avg per Group</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for officer in summary_data['Officer Performance'] %}
+                                                    <tr>
+                                                        <td>{{ officer['name'] }}</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(officer['total_collected']) }}</td>
+                                                        <td class="text-center">{{ officer['groups_attended'] }}</td>
+                                                        <td class="text-center">{{ officer['days_active'] }}</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(officer['average_per_day']) }}</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(officer['average_per_group']) }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Top and Bottom Groups -->
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Top 5 Performing Groups</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Group</th>
+                                                        <th class="text-end">Total Collection</th>
+                                                        <th class="text-center">Visits</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for group_name, data in summary_data['Top Groups'] %}
+                                                    <tr>
+                                                        <td>{{ group_name }}</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(data['total']) }}</td>
+                                                        <td class="text-center">{{ data['visits'] }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Bottom 5 Performing Groups</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Group</th>
+                                                        <th class="text-end">Total Collection</th>
+                                                        <th class="text-center">Visits</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for group_name, data in summary_data['Bottom Groups'] %}
+                                                    <tr>
+                                                        <td>{{ group_name }}</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(data['total']) }}</td>
+                                                        <td class="text-center">{{ data['visits'] }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Daily Reports Table -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">Daily Collection Reports</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Field Officer</th>
+                                                        <th class="text-center">Groups Attended</th>
+                                                        <th class="text-end">Total Collection</th>
+                                                        <th class="text-center">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for report in daily_reports %}
+                                                    <tr>
+                                                        <td>{{ report['Date'] }}</td>
+                                                        <td>{{ report['Field Officer'] }}</td>
+                                                        <td class="text-center">{{ report['Groups Attended'] }}</td>
+                                                        <td class="text-end">{{ "{:,.2f}".format(report['Totals']['Total Amount Collected']) }}</td>
+                                                        <td class="text-center">
+                                                            <a href="{{ url_for('field_officers_web.collection_summary', date=report['Date'].split()[0], officer_id=selected_officer_id) }}" 
+                                                               class="btn btn-sm btn-outline-primary">
+                                                                <i class="fas fa-eye"></i> View
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <h5>No report data available</h5>
+                            <p>Please select a date range and officer to generate a report</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Only initialize charts if summary data exists
+        {% if summary_data %}
+        
+        // Collection Breakdown Chart
+        const breakdownCtx = document.getElementById('collectionBreakdownChart').getContext('2d');
+        new Chart(breakdownCtx, {
+            type: 'pie',
+            data: {
+                labels: [
+                    'Service Fee', 
+                    'Project Registration', 
+                    'Member Registration', 
+                    'Ukombozini Loan', 
+                    'Ukombozini Project', 
+                    'Welfare'
+                ],
+                datasets: [{
+                    data: [
+                        {{ summary_data['Totals']['Service Fee'] }},
+                        {{ summary_data['Totals']['Project Registration Fee'] }},
+                        {{ summary_data['Totals']['Member Registration Fee'] }},
+                        {{ summary_data['Totals']['Ukombozini Loan Collection'] }},
+                        {{ summary_data['Totals']['Ukombozini Project Amount'] }},
+                        {{ summary_data['Totals']['Welfare Total'] }}
+                    ],
+                    backgroundColor: [
+                        '#4e73df',
+                        '#1cc88a',
+                        '#36b9cc',
+                        '#f6c23e',
+                        '#e74a3b',
+                        '#6f42c1'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? ((value / total) * 100).toFixed(2) + '%' : '0%';
+                                return `${context.label}: ${value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${percentage})`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Officer Performance Chart
+        const officerCtx = document.getElementById('officerPerformanceChart').getContext('2d');
+        new Chart(officerCtx, {
+            type: 'bar',
+            data: {
+                labels: [
+                    {% for officer in summary_data['Officer Performance'] %}
+                    '{{ officer['name'] }}',
+                    {% endfor %}
+                ],
+                datasets: [{
+                    label: 'Total Collected',
+                    data: [
+                        {% for officer in summary_data['Officer Performance'] %}
+                        {{ officer['total_collected'] }},
+                        {% endfor %}
+                    ],
+                    backgroundColor: '#4e73df'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                return `Total: ${value.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        {% endif %}
+    });
+</script>
+{% endblock %} 

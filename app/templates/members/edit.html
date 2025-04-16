@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Member - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('members.list_members') }}">Members</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('members.view_member', id=member.id) }}">{{ member.first_name }} {{ member.last_name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Edit</li>
+                </ol>
+            </nav>
+            <h1 class="mt-2">Edit Member</h1>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-10 col-lg-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Member Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('members.edit_member', id=member.id) }}">
+                        <!-- Account Information -->
+                        <h6 class="border-bottom pb-2 mb-3">Account Information</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="username" name="username" value="{{ member.username }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ member.email }}" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="new_password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="new_password" name="new_password" placeholder="Leave blank to keep current password">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Leave blank to keep current password">
+                            </div>
+                        </div>
+                        
+                        <!-- Personal Information -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">Personal Information</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ member.first_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ member.last_name }}">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ member.phone_number }}">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if member.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">Active Account</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Update Member
+                            </button>
+                            <a href="{{ url_for('members.view_member', id=member.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Group Memberships</h5>
+                </div>
+                <div class="card-body">
+                    {% if memberships %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Group</th>
+                                    <th>Role</th>
+                                    <th>Join Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for membership in memberships %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('groups.view_group', id=membership.group_id) }}">
+                                            {{ membership.group.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ membership.role|title }}</td>
+                                    <td>{{ membership.join_date.strftime('%d %b, %Y') if membership.join_date else 'N/A' }}</td>
+                                    <td>
+                                        {% if membership.status == 'active' %}
+                                        <span class="badge bg-success">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form action="{{ url_for('members.remove_from_group', id=membership.id) }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to remove this member from the group?')" title="Remove from group">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Member is not part of any group yet.</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+                            <i class="fas fa-plus me-1"></i> Add to Group
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add to Group Modal -->
+<div class="modal fade" id="addGroupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add to Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('members.add_to_group', id=member.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="group_id" class="form-label">Select Group</label>
+                        <select class="form-select" id="group_id" name="group_id" required>
+                            <option value="">-- Select Group --</option>
+                            {% for group in groups %}
+                                {% if group.id not in memberships|map(attribute='group_id')|list %}
+                                <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Role in Group</label>
+                        <select class="form-select" id="role" name="role">
+                            <option value="member">Member</option>
+                            <option value="treasurer">Treasurer</option>
+                            <option value="secretary">Secretary</option>
+                            <option value="chairperson">Chairperson</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add to Group</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Password validation
+        const passwordField = document.getElementById('new_password');
+        const confirmField = document.getElementById('confirm_password');
+        const form = document.querySelector('form');
+        
+        form.addEventListener('submit', function(e) {
+            if (passwordField.value !== confirmField.value && passwordField.value.length > 0) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+            }
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,595 @@
+{% extends "base.html" %}
+
+{% block title %}Dividends Management - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Dividends</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Dividend Distributions</h5>
+                    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#newDividendModal">
+                        <i class="fas fa-plus-circle me-1"></i> Create Distribution
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <form method="GET" action="{{ url_for('main.dividends') }}" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="group" class="form-label">Group</label>
+                                <select class="form-select" id="group" name="group_id">
+                                    <option value="">All Groups</option>
+                                    {% for group in groups %}
+                                        <option value="{{ group.id }}" {% if request.args.get('group_id')|int == group.id %}selected{% endif %}>
+                                            {{ group.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="year" class="form-label">Year</label>
+                                <select class="form-select" id="year" name="year">
+                                    <option value="">All Years</option>
+                                    {% for year in range(2025, 2020, -1) %}
+                                        <option value="{{ year }}" {% if request.args.get('year')|int == year %}selected{% endif %}>
+                                            {{ year }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="distribution_type" class="form-label">Type</label>
+                                <select class="form-select" id="distribution_type" name="distribution_type">
+                                    <option value="">All Types</option>
+                                    <option value="annual" {% if request.args.get('distribution_type') == 'annual' %}selected{% endif %}>Annual</option>
+                                    <option value="semi-annual" {% if request.args.get('distribution_type') == 'semi-annual' %}selected{% endif %}>Semi-Annual</option>
+                                    <option value="quarterly" {% if request.args.get('distribution_type') == 'quarterly' %}selected{% endif %}>Quarterly</option>
+                                    <option value="special" {% if request.args.get('distribution_type') == 'special' %}selected{% endif %}>Special</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="">All Statuses</option>
+                                    <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="processing" {% if request.args.get('status') == 'processing' %}selected{% endif %}>Processing</option>
+                                    <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
+                                </select>
+                            </div>
+                            <div class="col-12 d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-filter me-1"></i> Filter
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Group</th>
+                                    <th>Amount</th>
+                                    <th>Type</th>
+                                    <th>Year/Period</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if distributions %}
+                                    {% for distribution in distributions %}
+                                        <tr>
+                                            <td>{{ distribution.distribution_date.strftime('%d-%m-%Y') }}</td>
+                                            <td>{{ distribution.group.name }}</td>
+                                            <td>KES {{ distribution.total_amount }}</td>
+                                            <td>
+                                                {% if distribution.distribution_type == 'annual' %}
+                                                    <span class="badge bg-success">Annual</span>
+                                                {% elif distribution.distribution_type == 'semi-annual' %}
+                                                    <span class="badge bg-info">Semi-Annual</span>
+                                                {% elif distribution.distribution_type == 'quarterly' %}
+                                                    <span class="badge bg-primary">Quarterly</span>
+                                                {% elif distribution.distribution_type == 'special' %}
+                                                    <span class="badge bg-warning">Special</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ distribution.distribution_type }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ distribution.year }} {% if distribution.period %}({{ distribution.period }}){% endif %}</td>
+                                            <td>
+                                                {% if distribution.status == 'pending' %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% elif distribution.status == 'processing' %}
+                                                    <span class="badge bg-primary">Processing</span>
+                                                {% elif distribution.status == 'completed' %}
+                                                    <span class="badge bg-success">Completed</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ distribution.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="viewDistribution({{ distribution.id }})">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-success" onclick="addDividendPayment({{ distribution.id }})">
+                                                    <i class="fas fa-money-bill-wave"></i>
+                                                </button>
+                                                {% if current_user.role == 'admin' %}
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDistribution({{ distribution.id }})">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4">
+                                            <div class="alert alert-info mb-0">
+                                                <i class="fas fa-info-circle me-2"></i> No dividend distributions found
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if pagination %}
+                    <div class="d-flex justify-content-center mt-4">
+                        <nav>
+                            <ul class="pagination">
+                                {% if pagination.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('main.dividends', page=pagination.prev_num, **request.args) }}">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#"><span aria-hidden="true">&laquo;</span></a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for page in pagination.iter_pages() %}
+                                    {% if page %}
+                                        {% if page != pagination.page %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="{{ url_for('main.dividends', page=page, **request.args) }}">{{ page }}</a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item active">
+                                                <a class="page-link" href="#">{{ page }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <a class="page-link" href="#">...</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if pagination.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('main.dividends', page=pagination.next_num, **request.args) }}">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#"><span aria-hidden="true">&raquo;</span></a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Dividend Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Total Distributions (This Year)</h6>
+                        <h2 class="mb-0">KES {{ total_distributions_year|default('0.00', true) }}</h2>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Average Distribution Amount</h6>
+                        <h2 class="mb-0">KES {{ avg_distribution_amount|default('0.00', true) }}</h2>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Total Distribution Count</h6>
+                        <h2 class="mb-0">{{ distribution_count|default('0', true) }}</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newDividendModal">
+                            <i class="fas fa-plus-circle me-1"></i> Create New Distribution
+                        </button>
+                        <a href="#" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#dividendCalculatorModal">
+                            <i class="fas fa-calculator me-1"></i> Dividend Calculator
+                        </a>
+                        <a href="#" class="btn btn-outline-info">
+                            <i class="fas fa-file-export me-1"></i> Export Dividend Data
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Dividend Modal -->
+<div class="modal fade" id="newDividendModal" tabindex="-1" aria-labelledby="newDividendModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="newDividendModalLabel">Create Dividend Distribution</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="{{ url_for('financial.create_dividend') }}" id="dividendForm" class="needs-validation" novalidate>
+                    {{ csrf_token() }}
+                    
+                    <div class="mb-3">
+                        <label for="group_id" class="form-label">Group</label>
+                        <select class="form-select" id="group_id" name="group_id" required>
+                            <option value="">Select Group</option>
+                            {% for group in groups %}
+                                <option value="{{ group.id }}">{{ group.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback">Please select a group.</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="total_amount" class="form-label">Total Amount (KES)</label>
+                            <input type="number" class="form-control" id="total_amount" name="total_amount" min="1" step="1" required>
+                            <div class="invalid-feedback">Please enter a valid amount.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="distribution_type" class="form-label">Distribution Type</label>
+                            <select class="form-select" id="distribution_type" name="distribution_type" required>
+                                <option value="">Select Type</option>
+                                <option value="annual">Annual</option>
+                                <option value="semi-annual">Semi-Annual</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="special">Special</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a distribution type.</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="year" class="form-label">Year</label>
+                            <select class="form-select" id="year" name="year" required>
+                                <option value="">Select Year</option>
+                                {% for year in range(2025, 2020, -1) %}
+                                    <option value="{{ year }}">{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">Please select a year.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="period" class="form-label">Period (Optional)</label>
+                            <input type="text" class="form-control" id="period" name="period" placeholder="Q1, Q2, H1, etc.">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="dividendForm" class="btn btn-primary">Create Distribution</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dividend Calculator Modal -->
+<div class="modal fade" id="dividendCalculatorModal" tabindex="-1" aria-labelledby="dividendCalculatorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="dividendCalculatorModalLabel">Dividend Calculator</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="calc_group_id" class="form-label">Group</label>
+                    <select class="form-select" id="calc_group_id">
+                        <option value="">Select Group</option>
+                        {% for group in groups %}
+                            <option value="{{ group.id }}">{{ group.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="calc_total_profit" class="form-label">Total Profit (KES)</label>
+                    <input type="number" class="form-control" id="calc_total_profit" min="0">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="calc_distribution_percentage" class="form-label">Distribution Percentage (%)</label>
+                    <input type="number" class="form-control" id="calc_distribution_percentage" min="0" max="100" value="70">
+                    <div class="form-text">The percentage of profit to distribute as dividends.</div>
+                </div>
+                
+                <hr>
+                
+                <div class="alert alert-info" id="calculator_result" style="display: none;">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">Calculated Result:</h6>
+                            <p class="mb-1">Total Dividend Amount: <strong id="result_total_amount">KES 0.00</strong></p>
+                            <p class="mb-1">Retained Amount: <strong id="result_retained_amount">KES 0.00</strong></p>
+                            <p class="mb-0">Estimated Per Member: <strong id="result_per_member">KES 0.00</strong></p>
+                        </div>
+                        <div>
+                            <i class="fas fa-calculator fa-3x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-info" id="calculate_btn">Calculate</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal Template -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="paymentModalLabel">Record Dividend Payment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="payment-loading">
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading distribution details...</p>
+                    </div>
+                </div>
+                
+                <div id="payment-form-container" style="display: none;">
+                    <div class="distribution-details mb-4">
+                        <h6>Distribution Details</h6>
+                        <p><strong>Group:</strong> <span id="dist-group-name"></span></p>
+                        <p><strong>Total Amount:</strong> KES <span id="dist-total-amount"></span></p>
+                        <p><strong>Distribution Type:</strong> <span id="dist-type"></span></p>
+                        <p><strong>Year/Period:</strong> <span id="dist-year-period"></span></p>
+                    </div>
+                    
+                    <hr>
+                    
+                    <form method="POST" id="paymentForm" class="needs-validation" novalidate>
+                        {{ csrf_token() }}
+                        
+                        <div class="mb-3">
+                            <label for="user_id" class="form-label">Member</label>
+                            <select class="form-select" id="user_id" name="user_id" required>
+                                <option value="">Select Member</option>
+                            </select>
+                            <div class="invalid-feedback">Please select a member.</div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="amount" class="form-label">Payment Amount (KES)</label>
+                                <input type="number" class="form-control" id="amount" name="amount" min="1" step="1" required>
+                                <div class="invalid-feedback">Please enter a valid amount.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="payment_method" class="form-label">Payment Method</label>
+                                <select class="form-select" id="payment_method" name="payment_method" required>
+                                    <option value="">Select Method</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="mobile_money">Mobile Money</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="check">Check</option>
+                                </select>
+                                <div class="invalid-feedback">Please select a payment method.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="reference_number" class="form-label">Reference Number</label>
+                            <input type="text" class="form-control" id="reference_number" name="reference_number" placeholder="Transaction ID, Receipt Number, etc.">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="payment_notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="payment_notes" name="notes" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="paymentForm" class="btn btn-success" id="submitPaymentBtn" style="display: none;">Record Payment</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form validation
+        const form = document.querySelector('.needs-validation');
+        if (form) {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            });
+        }
+        
+        // Dividend Calculator
+        const calculateBtn = document.getElementById('calculate_btn');
+        if (calculateBtn) {
+            calculateBtn.addEventListener('click', function() {
+                const totalProfit = parseFloat(document.getElementById('calc_total_profit').value) || 0;
+                const distributionPercentage = parseFloat(document.getElementById('calc_distribution_percentage').value) || 0;
+                const groupId = document.getElementById('calc_group_id').value;
+                
+                if (totalProfit > 0 && distributionPercentage > 0) {
+                    const totalDividendAmount = totalProfit * (distributionPercentage / 100);
+                    const retainedAmount = totalProfit - totalDividendAmount;
+                    
+                    document.getElementById('result_total_amount').textContent = `KES ${totalDividendAmount.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    document.getElementById('result_retained_amount').textContent = `KES ${retainedAmount.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                    
+                    // Fetch member count if group is selected
+                    if (groupId) {
+                        fetch(`/api/groups/${groupId}/members/count`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success && data.count > 0) {
+                                    const perMember = totalDividendAmount / data.count;
+                                    document.getElementById('result_per_member').textContent = `KES ${perMember.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                                } else {
+                                    document.getElementById('result_per_member').textContent = 'No members found';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error fetching member count:', error);
+                                document.getElementById('result_per_member').textContent = 'Error calculating';
+                            });
+                    } else {
+                        document.getElementById('result_per_member').textContent = 'Select a group';
+                    }
+                    
+                    document.getElementById('calculator_result').style.display = 'block';
+                }
+            });
+        }
+    });
+    
+    function viewDistribution(id) {
+        // Implement view distribution details functionality
+        window.location.href = `/dividends/${id}`;
+    }
+    
+    function addDividendPayment(id) {
+        const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
+        const paymentForm = document.getElementById('paymentForm');
+        const loading = document.getElementById('payment-loading');
+        const formContainer = document.getElementById('payment-form-container');
+        const submitBtn = document.getElementById('submitPaymentBtn');
+        
+        // Reset and show loading
+        loading.style.display = 'block';
+        formContainer.style.display = 'none';
+        submitBtn.style.display = 'none';
+        
+        // Show modal
+        paymentModal.show();
+        
+        // Fetch distribution details
+        fetch(`/api/dividends/${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update distribution details
+                    document.getElementById('dist-group-name').textContent = data.distribution.group_name;
+                    document.getElementById('dist-total-amount').textContent = data.distribution.total_amount;
+                    document.getElementById('dist-type').textContent = data.distribution.distribution_type;
+                    document.getElementById('dist-year-period').textContent = `${data.distribution.year} ${data.distribution.period ? '(' + data.distribution.period + ')' : ''}`;
+                    
+                    // Set form action
+                    paymentForm.action = `/dividends/${id}/payments`;
+                    
+                    // Populate member dropdown
+                    const memberSelect = document.getElementById('user_id');
+                    memberSelect.innerHTML = '<option value="">Select Member</option>';
+                    
+                    if (data.members && data.members.length > 0) {
+                        data.members.forEach(member => {
+                            memberSelect.innerHTML += `<option value="${member.id}">${member.first_name} ${member.last_name}</option>`;
+                        });
+                    }
+                    
+                    // Hide loading, show form
+                    loading.style.display = 'none';
+                    formContainer.style.display = 'block';
+                    submitBtn.style.display = 'block';
+                } else {
+                    alert('Error loading distribution details: ' + data.message);
+                    paymentModal.hide();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while loading distribution details');
+                paymentModal.hide();
+            });
+    }
+    
+    function deleteDistribution(id) {
+        if (confirm('Are you sure you want to delete this dividend distribution? This action cannot be undone.')) {
+            fetch(`/api/dividends/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Distribution deleted successfully');
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the distribution');
+            });
+        }
+    }
+</script>
+{% endblock %} 

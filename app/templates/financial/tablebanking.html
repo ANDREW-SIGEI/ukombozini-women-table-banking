@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}Tablebanking Management - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Tablebanking Management</h1>
+        <div class="btn-group">
+            <a href="{{ url_for('financial.tablebanking_deposit') }}" class="btn btn-success">
+                <i class="fas fa-plus-circle me-1"></i> Record Deposit
+            </a>
+            <a href="{{ url_for('financial.tablebanking_withdrawal') }}" class="btn btn-warning">
+                <i class="fas fa-minus-circle me-1"></i> Record Withdrawal
+            </a>
+            <a href="{{ url_for('financial.tablebanking_interest') }}" class="btn btn-info">
+                <i class="fas fa-percentage me-1"></i> Apply Interest
+            </a>
+            <a href="{{ url_for('financial.tablebanking_reports') }}" class="btn btn-primary">
+                <i class="fas fa-chart-bar me-1"></i> Reports
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Balance</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">KES {{ "{:,.2f}".format(total_balance) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-wallet fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Transactions (30 days)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ recent_txns_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exchange-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Members</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ member_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Total Interest</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">KES {{ "{:,.2f}".format(total_interest) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="m-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <a href="{{ url_for('financial.tablebanking_transactions') }}" class="btn btn-outline-primary btn-block mb-2">
+                                <i class="fas fa-list-alt fa-lg mb-2"></i><br>
+                                View All Transactions
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('financial.tablebanking_members') }}" class="btn btn-outline-secondary btn-block mb-2">
+                                <i class="fas fa-users fa-lg mb-2"></i><br>
+                                Member Accounts
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('financial.tablebanking_reports') }}?type=summary" class="btn btn-outline-success btn-block mb-2">
+                                <i class="fas fa-chart-pie fa-lg mb-2"></i><br>
+                                Summary Report
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="#exportOptions" data-bs-toggle="modal" class="btn btn-outline-info btn-block mb-2">
+                                <i class="fas fa-file-export fa-lg mb-2"></i><br>
+                                Export Data
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Recent Transactions</h6>
+            <a href="{{ url_for('financial.tablebanking_transactions') }}" class="btn btn-sm btn-primary">View All</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Member</th>
+                            <th>Group</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if transactions %}
+                            {% for txn in transactions %}
+                                <tr>
+                                    <td>{{ txn.transaction_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        {% if txn.member %}
+                                            {{ txn.member.first_name }} {{ txn.member.last_name }}
+                                        {% else %}
+                                            Unknown
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if txn.group %}
+                                            {{ txn.group.name }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if txn.transaction_type == 'deposit' %}
+                                            <span class="badge bg-success">Deposit</span>
+                                        {% elif txn.transaction_type == 'withdrawal' %}
+                                            <span class="badge bg-warning">Withdrawal</span>
+                                        {% elif txn.transaction_type == 'interest' %}
+                                            <span class="badge bg-info">Interest</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ txn.transaction_type }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>KES {{ "{:,.2f}".format(txn.amount) }}</td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-outline-primary view-transaction" data-id="{{ txn.id }}" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-sm btn-outline-secondary print-receipt" data-id="{{ txn.id }}" title="Print Receipt">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">No transactions found</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options Modal -->
+    <div class="modal fade" id="exportOptions" tabindex="-1" aria-labelledby="exportOptionsLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportOptionsLabel">Export Options</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="exportForm" method="GET" action="#">
+                        <div class="mb-3">
+                            <label for="exportType" class="form-label">Export Type</label>
+                            <select class="form-select" id="exportType" name="type">
+                                <option value="transactions">Transactions</option>
+                                <option value="members">Member Accounts</option>
+                                <option value="summary">Summary Report</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="exportFormat" class="form-label">Format</label>
+                            <select class="form-select" id="exportFormat" name="format">
+                                <option value="excel">Excel</option>
+                                <option value="pdf">PDF</option>
+                                <option value="csv">CSV</option>
+                            </select>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="fromDate" class="form-label">From Date</label>
+                                <input type="date" class="form-control" id="fromDate" name="from_date">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="toDate" class="form-label">To Date</label>
+                                <input type="date" class="form-control" id="toDate" name="to_date">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="exportData">Export Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Details Modal -->
+    <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="transactionModalLabel">Transaction Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="transaction-details">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <p><strong>Transaction ID:</strong> <span id="txn-id"></span></p>
+                                <p><strong>Date:</strong> <span id="txn-date"></span></p>
+                                <p><strong>Type:</strong> <span id="txn-type"></span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Member:</strong> <span id="txn-member"></span></p>
+                                <p><strong>Group:</strong> <span id="txn-group"></span></p>
+                                <p><strong>Amount:</strong> <span id="txn-amount"></span></p>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <p><strong>Notes:</strong></p>
+                                <p id="txn-notes" class="p-2 bg-light rounded"></p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <p><strong>Recorded by:</strong> <span id="txn-recorder"></span></p>
+                                <p><strong>Receipt #:</strong> <span id="txn-receipt"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary print-receipt-modal">Print Receipt</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set today's date as default for date inputs
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('fromDate').value = today;
+        document.getElementById('toDate').value = today;
+        
+        // Handle export form submission
+        document.getElementById('exportData').addEventListener('click', function() {
+            const form = document.getElementById('exportForm');
+            const type = document.getElementById('exportType').value;
+            const format = document.getElementById('exportFormat').value;
+            
+            // Set the form action based on export type
+            if (type === 'transactions') {
+                form.action = '/tablebanking/export/transactions';
+            } else if (type === 'members') {
+                form.action = '/tablebanking/export/members';
+            } else if (type === 'summary') {
+                form.action = '/tablebanking/export/summary';
+            }
+            
+            form.submit();
+        });
+        
+        // Handle transaction view buttons
+        const viewButtons = document.querySelectorAll('.view-transaction');
+        viewButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const transactionId = this.getAttribute('data-id');
+                
+                // In a real application, you would fetch transaction details via AJAX
+                // For demonstration, we'll just show the modal with placeholder data
+                document.getElementById('txn-id').textContent = transactionId;
+                document.getElementById('txn-date').textContent = '2025-04-15';
+                document.getElementById('txn-type').textContent = 'Deposit';
+                document.getElementById('txn-member').textContent = 'John Doe';
+                document.getElementById('txn-group').textContent = 'Umoja Savings Group';
+                document.getElementById('txn-amount').textContent = 'KES 5,000.00';
+                document.getElementById('txn-notes').textContent = 'Regular monthly deposit';
+                document.getElementById('txn-recorder').textContent = 'Admin User';
+                document.getElementById('txn-receipt').textContent = 'TBK-' + transactionId;
+                
+                // Show the modal
+                const transactionModal = new bootstrap.Modal(document.getElementById('transactionModal'));
+                transactionModal.show();
+            });
+        });
+        
+        // Handle print receipt buttons
+        const printButtons = document.querySelectorAll('.print-receipt, .print-receipt-modal');
+        printButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('Receipt printing functionality would be implemented here');
+            });
+        });
+    });
+</script>
+{% endblock %} 

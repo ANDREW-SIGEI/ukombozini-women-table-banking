@@ -1,0 +1,506 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 pt-4">
+    <h1 class="h3 mb-2 text-gray-800">Administrator Dashboard</h1>
+    <p class="mb-4">Manage field officers, monitor system performance, and configure rotation schedules.</p>
+
+    <!-- Overview Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Active Field Officers</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="field-officers-count">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-tie fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Groups</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-groups">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Meetings This Week</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="meetings-count">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Unassigned Groups</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="unassigned-groups">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Field Officers Table -->
+        <div class="col-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Field Officers</h6>
+                    <div>
+                        <a href="/admin/field-officers/new" class="btn btn-sm btn-primary">Add Field Officer</a>
+                        <a href="/admin/field-officers/rotation" class="btn btn-sm btn-info">Manage Rotations</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="field-officers-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Officer Name</th>
+                                    <th>Assigned Groups</th>
+                                    <th>Performance Score</th>
+                                    <th>Last Rotation</th>
+                                    <th>Upcoming Rotation</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="field-officers-body">
+                                <!-- Field officers will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Rotation Schedule -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Upcoming Rotations</h6>
+                    <a href="/admin/rotation-schedule" class="btn btn-sm btn-primary">View Schedule</a>
+                </div>
+                <div class="card-body">
+                    <div id="no-rotations" class="text-center py-4 d-none">
+                        <p class="text-gray-500 mb-0">No rotations currently scheduled.</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="rotation-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Officer</th>
+                                    <th>Current Group</th>
+                                    <th>New Group</th>
+                                    <th>Rotation Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rotation-body">
+                                <!-- Rotation schedule will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Overview -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Performance Comparison</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-bar">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                    <hr>
+                    <p class="text-center text-gray-500 small">Performance metrics based on attendance rates, collection efficiency, and visit frequency</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Unassigned Groups -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Unassigned Groups</h6>
+                </div>
+                <div class="card-body">
+                    <div id="no-unassigned-groups" class="text-center py-4 d-none">
+                        <p class="text-gray-500 mb-0">All groups have been assigned to field officers.</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="unassigned-groups-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Group Name</th>
+                                    <th>Location</th>
+                                    <th>Member Count</th>
+                                    <th>Created Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="unassigned-groups-body">
+                                <!-- Unassigned groups will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+                </div>
+                <div class="card-body">
+                    <div id="activity-log">
+                        <!-- Activity logs will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Fetch dashboard data when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchDashboardData();
+    });
+
+    function fetchDashboardData() {
+        fetch('/dashboard/admin', {
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            updateDashboard(data);
+        })
+        .catch(error => {
+            console.error('Error fetching dashboard data:', error);
+        });
+    }
+
+    function updateDashboard(data) {
+        // Update stats cards
+        document.getElementById('field-officers-count').textContent = data.field_officers.length;
+        document.getElementById('total-groups').textContent = data.total_groups;
+        document.getElementById('meetings-count').textContent = data.meetings_this_week;
+        document.getElementById('unassigned-groups').textContent = data.unassigned_groups.length;
+
+        // Populate field officers table
+        const officersBody = document.getElementById('field-officers-body');
+        officersBody.innerHTML = '';
+        
+        if (data.field_officers.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = '<td colspan="6" class="text-center">No field officers found</td>';
+            officersBody.appendChild(row);
+        } else {
+            data.field_officers.forEach(officer => {
+                const row = document.createElement('tr');
+                const lastRotation = officer.last_rotation ? new Date(officer.last_rotation).toLocaleDateString() : 'Never';
+                const upcomingRotation = officer.upcoming_rotation ? new Date(officer.upcoming_rotation.date).toLocaleDateString() : 'None scheduled';
+                
+                row.innerHTML = `
+                    <td>${officer.name}</td>
+                    <td>${officer.assigned_groups.length}</td>
+                    <td>
+                        <div class="progress progress-sm mr-2">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: ${(officer.performance_score/10)*100}%" 
+                                aria-valuenow="${officer.performance_score}" aria-valuemin="0" aria-valuemax="10"></div>
+                        </div>
+                        <span class="small ml-1">${officer.performance_score.toFixed(1)}/10</span>
+                    </td>
+                    <td>${lastRotation}</td>
+                    <td>${upcomingRotation}</td>
+                    <td>
+                        <a href="/admin/field-officers/${officer.id}" class="btn btn-sm btn-info">View</a>
+                        <a href="/admin/field-officers/${officer.id}/edit" class="btn btn-sm btn-primary">Edit</a>
+                        <button class="btn btn-sm btn-success rotate-officer" data-officer-id="${officer.id}">Rotate</button>
+                    </td>
+                `;
+                officersBody.appendChild(row);
+            });
+        }
+
+        // Populate rotation schedule table
+        const rotationBody = document.getElementById('rotation-body');
+        rotationBody.innerHTML = '';
+        
+        if (data.upcoming_rotations.length === 0) {
+            document.getElementById('no-rotations').classList.remove('d-none');
+            document.getElementById('rotation-table').classList.add('d-none');
+        } else {
+            document.getElementById('no-rotations').classList.add('d-none');
+            document.getElementById('rotation-table').classList.remove('d-none');
+            
+            data.upcoming_rotations.forEach(rotation => {
+                const row = document.createElement('tr');
+                const rotationDate = new Date(rotation.rotation_date).toLocaleDateString();
+                
+                row.innerHTML = `
+                    <td>${rotation.officer_name}</td>
+                    <td>${rotation.current_group}</td>
+                    <td>${rotation.new_group}</td>
+                    <td>${rotationDate}</td>
+                    <td>
+                        <a href="/admin/rotations/${rotation.id}" class="btn btn-sm btn-info">View</a>
+                        <a href="/admin/rotations/${rotation.id}/edit" class="btn btn-sm btn-warning">Reschedule</a>
+                        <button class="btn btn-sm btn-danger cancel-rotation" data-rotation-id="${rotation.id}">Cancel</button>
+                    </td>
+                `;
+                rotationBody.appendChild(row);
+            });
+        }
+
+        // Populate unassigned groups table
+        const unassignedGroupsBody = document.getElementById('unassigned-groups-body');
+        unassignedGroupsBody.innerHTML = '';
+        
+        if (data.unassigned_groups.length === 0) {
+            document.getElementById('no-unassigned-groups').classList.remove('d-none');
+            document.getElementById('unassigned-groups-table').classList.add('d-none');
+        } else {
+            document.getElementById('no-unassigned-groups').classList.add('d-none');
+            document.getElementById('unassigned-groups-table').classList.remove('d-none');
+            
+            data.unassigned_groups.forEach(group => {
+                const row = document.createElement('tr');
+                const createdDate = new Date(group.created_at).toLocaleDateString();
+                
+                row.innerHTML = `
+                    <td>${group.name}</td>
+                    <td>${group.location}</td>
+                    <td>${group.member_count}</td>
+                    <td>${createdDate}</td>
+                    <td>
+                        <a href="/admin/groups/${group.id}" class="btn btn-sm btn-info">View</a>
+                        <button class="btn btn-sm btn-primary assign-group" data-group-id="${group.id}">Assign</button>
+                    </td>
+                `;
+                unassignedGroupsBody.appendChild(row);
+            });
+        }
+
+        // Populate activity log
+        const activityLog = document.getElementById('activity-log');
+        activityLog.innerHTML = '';
+        
+        if (data.recent_activities.length === 0) {
+            activityLog.innerHTML = '<p class="text-center text-gray-500 py-4">No recent activities to display</p>';
+        } else {
+            data.recent_activities.forEach(activity => {
+                const activityDiv = document.createElement('div');
+                activityDiv.className = 'activity-item pb-3 mb-3 border-bottom';
+                
+                const activityDate = new Date(activity.timestamp).toLocaleString();
+                const iconClass = getActivityIcon(activity.type);
+                
+                activityDiv.innerHTML = `
+                    <div class="d-flex">
+                        <div class="activity-icon mr-3">
+                            <i class="${iconClass}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="mb-0">${activity.description}</p>
+                            <small class="text-gray-500">${activityDate} by ${activity.user}</small>
+                        </div>
+                    </div>
+                `;
+                activityLog.appendChild(activityDiv);
+            });
+        }
+
+        // Create performance chart
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        
+        // Prepare data for chart
+        const labels = data.field_officers.map(officer => officer.name);
+        const performanceData = data.field_officers.map(officer => officer.performance_score);
+        
+        // Create the chart
+        if (window.performanceChart) {
+            window.performanceChart.destroy();
+        }
+        
+        if (labels.length > 0) {
+            window.performanceChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Performance Score',
+                        data: performanceData,
+                        backgroundColor: '#36b9cc',
+                        hoverBackgroundColor: '#2c9faf',
+                        borderColor: '#36b9cc',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        yAxes: [{
+                            ticks: {
+                                beginAtZero: true,
+                                max: 10
+                            }
+                        }]
+                    },
+                    tooltips: {
+                        backgroundColor: "rgb(255,255,255)",
+                        bodyFontColor: "#858796",
+                        titleMarginBottom: 10,
+                        titleFontColor: '#6e707e',
+                        titleFontSize: 14,
+                        borderColor: '#dddfeb',
+                        borderWidth: 1,
+                        xPadding: 15,
+                        yPadding: 15,
+                        displayColors: false,
+                        caretPadding: 10,
+                    },
+                }
+            });
+        } else {
+            const noDataMessage = document.createElement('p');
+            noDataMessage.textContent = 'No field officer data available for comparison';
+            noDataMessage.className = 'text-center text-gray-500 py-4';
+            document.getElementById('performanceChart').parentNode.replaceChild(noDataMessage, document.getElementById('performanceChart'));
+        }
+
+        // Set up event listeners for buttons
+        setupEventListeners();
+    }
+
+    function getActivityIcon(activityType) {
+        switch(activityType) {
+            case 'rotation':
+                return 'fas fa-exchange-alt text-info';
+            case 'assignment':
+                return 'fas fa-user-plus text-success';
+            case 'meeting':
+                return 'fas fa-calendar text-primary';
+            case 'visit':
+                return 'fas fa-clipboard-check text-warning';
+            case 'system':
+                return 'fas fa-cog text-secondary';
+            default:
+                return 'fas fa-info-circle text-primary';
+        }
+    }
+
+    function setupEventListeners() {
+        // Rotation buttons
+        document.querySelectorAll('.rotate-officer').forEach(button => {
+            button.addEventListener('click', function() {
+                const officerId = this.getAttribute('data-officer-id');
+                window.location.href = `/admin/field-officers/${officerId}/rotate`;
+            });
+        });
+
+        // Cancel rotation buttons
+        document.querySelectorAll('.cancel-rotation').forEach(button => {
+            button.addEventListener('click', function() {
+                const rotationId = this.getAttribute('data-rotation-id');
+                
+                if (confirm('Are you sure you want to cancel this rotation?')) {
+                    cancelRotation(rotationId);
+                }
+            });
+        });
+
+        // Assign group buttons
+        document.querySelectorAll('.assign-group').forEach(button => {
+            button.addEventListener('click', function() {
+                const groupId = this.getAttribute('data-group-id');
+                window.location.href = `/admin/groups/${groupId}/assign`;
+            });
+        });
+    }
+
+    function cancelRotation(rotationId) {
+        fetch(`/admin/rotations/${rotationId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token'),
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert('Rotation cancelled successfully');
+                fetchDashboardData();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error cancelling rotation:', error);
+            alert('Error cancelling rotation. Please try again.');
+        });
+    }
+</script>
+{% endblock %} 

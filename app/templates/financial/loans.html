@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Loans - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Loans</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Active Loans</h5>
+                    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#newLoanModal">
+                        <i class="fas fa-plus-circle me-1"></i> Issue New Loan
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Issue Date</th>
+                                    <th>Amount (KES)</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if loans %}
+                                    {% for loan in loans %}
+                                        <tr>
+                                            <td>{{ loan.user.first_name }} {{ loan.user.last_name }}</td>
+                                            <td>{{ loan.disbursement_date.strftime('%d-%m-%Y') if loan.disbursement_date else 'Pending' }}</td>
+                                            <td>{{ loan.amount }}</td>
+                                            <td>{{ loan.due_date.strftime('%d-%m-%Y') if loan.due_date else 'Not set' }}</td>
+                                            <td>
+                                                {% if loan.status == 'pending' %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                {% elif loan.status == 'approved' %}
+                                                    <span class="badge bg-success">Approved</span>
+                                                {% elif loan.status == 'active' %}
+                                                    <span class="badge bg-primary">Active</span>
+                                                {% elif loan.status == 'completed' %}
+                                                    <span class="badge bg-info">Completed</span>
+                                                {% elif loan.status == 'defaulted' %}
+                                                    <span class="badge bg-danger">Defaulted</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ loan.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                        Actions
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" href="{{ url_for('financial.get_loan', id=loan.id) }}">View Details</a></li>
+                                                        {% if loan.status == 'pending' %}
+                                                            <li><a class="dropdown-item" href="{{ url_for('financial.approve_loan', id=loan.id) }}">Approve</a></li>
+                                                        {% endif %}
+                                                        {% if loan.status == 'approved' or loan.status == 'active' %}
+                                                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#paymentModal" data-loan-id="{{ loan.id }}">Record Payment</a></li>
+                                                        {% endif %}
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            <div class="alert alert-info mb-0">
+                                                <i class="fas fa-info-circle me-2"></i> No loans found
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Loan Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Total Active Loans</h6>
+                        <h2 class="mb-0">KES {{ total_active_loans|default('0.00', true) }}</h2>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Total Repayments (This Month)</h6>
+                        <h2 class="mb-0">KES {{ total_repayments_month|default('0.00', true) }}</h2>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Expected Collections (Next 30 Days)</h6>
+                        <h2 class="mb-0">KES {{ expected_collections|default('0.00', true) }}</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('main.loan_collections') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-hand-holding-usd me-1"></i> Loan Collections
+                        </a>
+                        <a href="{{ url_for('financial.get_group_loans') }}" class="btn btn-outline-success">
+                            <i class="fas fa-users me-1"></i> Group Loans
+                        </a>
+                        <a href="#" class="btn btn-outline-secondary">
+                            <i class="fas fa-chart-line me-1"></i> Loan Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Loan Modal -->
+<div class="modal fade" id="newLoanModal" tabindex="-1" aria-labelledby="newLoanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="newLoanModalLabel">Issue New Loan</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('financial.create_loan') }}">
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="user_id" class="form-label">Member</label>
+                            <select class="form-select" id="user_id" name="user_id" required>
+                                <option value="">Select Member</option>
+                                {% for member in members %}
+                                    <option value="{{ member.id }}">{{ member.first_name }} {{ member.last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="amount" class="form-label">Loan Amount (KES)</label>
+                            <input type="number" class="form-control" id="amount" name="amount" required min="1">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="interest_rate" class="form-label">Interest Rate (%)</label>
+                            <input type="number" class="form-control" id="interest_rate" name="interest_rate" required min="0" step="0.01">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="term_months" class="form-label">Term (Months)</label>
+                            <input type="number" class="form-control" id="term_months" name="term_months" required min="1">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="purpose" class="form-label">Purpose</label>
+                        <textarea class="form-control" id="purpose" name="purpose" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Loan Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="paymentModalLabel">Record Loan Payment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" id="paymentForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="payment_amount" class="form-label">Payment Amount (KES)</label>
+                        <input type="number" class="form-control" id="payment_amount" name="amount" required min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment_type" class="form-label">Payment Method</label>
+                        <select class="form-select" id="payment_type" name="payment_type" required>
+                            <option value="cash">Cash</option>
+                            <option value="mobile_money">Mobile Money</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reference_number" class="form-label">Reference Number</label>
+                        <input type="text" class="form-control" id="reference_number" name="reference_number">
+                        <div class="form-text">Required for mobile money and bank transfers</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Record Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle payment modal form submission
+        const paymentModal = document.getElementById('paymentModal');
+        if (paymentModal) {
+            paymentModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const loanId = button.getAttribute('data-loan-id');
+                const form = this.querySelector('#paymentForm');
+                form.action = `/loans/${loanId}/payments`;
+            });
+        }
+    });
+</script>
+{% endblock %} 

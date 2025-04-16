@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Ukombozini Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+            color: #333;
+            text-align: center;
+        }
+        .offline-container {
+            max-width: 600px;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .offline-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            margin-bottom: 1rem;
+            color: #e74c3c;
+        }
+        p {
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        .button {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .cached-pages {
+            margin-top: 2rem;
+            text-align: left;
+        }
+        .cached-pages h3 {
+            margin-bottom: 1rem;
+        }
+        .cached-pages ul {
+            padding-left: 1.5rem;
+        }
+        .cached-pages li {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <svg class="offline-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2">
+            <path d="M1 1l22 22M16.72 16.72A10.94 10.94 0 0112 18c-6 0-10-4-10-10m10-6a10 10 0 018.66 5.06M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"></path>
+        </svg>
+        <h1>You're Offline</h1>
+        <p>It looks like you've lost your internet connection. Don't worry! The Ukombozini Management System works offline, but this specific page hasn't been cached yet.</p>
+        <p>You can still access previously visited pages and work with your data. Any changes you make will be synchronized when you're back online.</p>
+        <a href="/" class="button">Go to Dashboard</a>
+
+        <div class="cached-pages" id="cached-pages">
+            <h3>Available Offline Pages:</h3>
+            <ul id="available-pages">
+                <li><a href="/">Dashboard</a></li>
+                <!-- Additional pages will be dynamically added by JavaScript -->
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Attempt to fetch and display available cached pages
+        if ('caches' in window) {
+            caches.open('ukombozini-cache-v1').then(cache => {
+                cache.keys().then(requests => {
+                    const availablePagesList = document.getElementById('available-pages');
+                    const uniqueUrls = new Set();
+                    
+                    requests.forEach(request => {
+                        const url = new URL(request.url);
+                        // Only show HTML pages or routes without file extensions
+                        if (url.pathname.endsWith('.html') || 
+                            url.pathname.endsWith('/') || 
+                            url.pathname.match(/\.[a-z]+$/i)) {
+                            
+                            // Skip the offline page itself
+                            if (url.pathname !== '/templates/offline.html' && url.pathname !== '/offline.html') {
+                                uniqueUrls.add(url.pathname);
+                            }
+                        }
+                    });
+
+                    // Clear default dashboard link if it's not actually cached
+                    if (!uniqueUrls.has('/')) {
+                        availablePagesList.innerHTML = '';
+                    }
+                    
+                    uniqueUrls.forEach(pathname => {
+                        if (pathname !== '/') { // Skip dashboard if already in the list
+                            const li = document.createElement('li');
+                            const a = document.createElement('a');
+                            a.href = pathname;
+                            a.textContent = pathname.replace(/^\/?|\/$/, '').replace(/\//g, ' > ') || 'Home';
+                            li.appendChild(a);
+                            availablePagesList.appendChild(li);
+                        }
+                    });
+                    
+                    // Hide the section if no pages are available
+                    if (uniqueUrls.size === 0) {
+                        document.getElementById('cached-pages').style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Listen for online status changes
+        window.addEventListener('online', () => {
+            document.querySelector('h1').textContent = 'You\'re Back Online!';
+            const reloadButton = document.createElement('button');
+            reloadButton.textContent = 'Reload Page';
+            reloadButton.className = 'button';
+            reloadButton.style.marginLeft = '10px';
+            reloadButton.addEventListener('click', () => window.location.reload());
+            document.querySelector('.button').after(reloadButton);
+        });
+    </script>
+</body>
+</html> 

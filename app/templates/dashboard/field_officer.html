@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+
+{% block title %}Field Officer Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 pt-4">
+    <h1 class="h3 mb-2 text-gray-800">Field Officer Dashboard</h1>
+    <p class="mb-4">Welcome to your field officer dashboard. Here you can monitor your assigned groups, meetings, and performance.</p>
+
+    <!-- Field Officer Stats Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Assigned Groups</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="assigned-groups-count">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Collections This Month</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="total-collections">0 KES</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Groups Visited This Month</div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800" id="groups-visited">0</div>
+                                </div>
+                                <div class="col">
+                                    <div class="progress progress-sm mr-2">
+                                        <div class="progress-bar bg-info" role="progressbar" style="width: 0%" 
+                                            id="groups-visited-bar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Today's Meetings</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="todays-meetings">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions Row -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('field_officers_web.collection_entry') }}" class="btn btn-success btn-block">
+                                <i class="fas fa-money-bill me-2"></i> Enter Collections
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('field_officers_web.collection_summary') }}" class="btn btn-info btn-block">
+                                <i class="fas fa-chart-bar me-2"></i> Collection Summary
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('field_officers_web.visit_reports') }}" class="btn btn-primary btn-block">
+                                <i class="fas fa-clipboard-list me-2"></i> Visit Reports
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="#" class="btn btn-secondary btn-block" id="btn-offline-mode">
+                                <i class="fas fa-cloud-download-alt me-2"></i> Offline Mode
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Assigned Groups -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Assigned Groups</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="assigned-groups-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Group Name</th>
+                                    <th>Location</th>
+                                    <th>Members</th>
+                                    <th>Last Visit</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assigned-groups-body">
+                                <!-- Assigned groups will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Meetings -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Today's Meetings</h6>
+                </div>
+                <div class="card-body">
+                    <div id="no-meetings-today" class="text-center py-4 d-none">
+                        <p class="text-gray-500 mb-0">No meetings scheduled for today.</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="todays-meetings-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Group</th>
+                                    <th>Time</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="todays-meetings-body">
+                                <!-- Today's meetings will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Recent Collections -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Collections</h6>
+                    <a href="{{ url_for('field_officers_web.collection_summary') }}" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div id="no-recent-collections" class="text-center py-4 d-none">
+                        <p class="text-gray-500 mb-0">No recent collections found.</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="recent-collections-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Group</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-collections-body">
+                                <!-- Recent collections will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collections Breakdown -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Collections This Month</h6>
+                    <a href="{{ url_for('field_officers_web.collection_summary_range') }}" class="btn btn-sm btn-primary">View Report</a>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="collectionsChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-primary"></i> Service Fees
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-success"></i> Registration Fees
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-info"></i> Loan Collections
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-warning"></i> Project Funds
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-danger"></i> Welfare
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Fetch dashboard stats from API
+        fetch('/field-officers-web/api/dashboard-stats')
+            .then(response => response.json())
+            .then(data => {
+                updateDashboardStats(data);
+                updateCollectionsChart(data);
+                updateRecentCollections(data.recent_collections);
+            })
+            .catch(error => {
+                console.error('Error fetching dashboard stats:', error);
+            });
+
+        // Update dashboard stats from API data
+        function updateDashboardStats(data) {
+            // Update collection stats
+            document.getElementById('total-collections').textContent = formatCurrency(data.total_collection);
+            document.getElementById('groups-visited').textContent = data.group_count;
+            
+            // Update progress bars
+            // Assuming about 30% of assigned groups is a good target
+            const progressPercentage = Math.min(100, (data.group_count / 10) * 100);
+            const groupsVisitedBar = document.getElementById('groups-visited-bar');
+            groupsVisitedBar.style.width = `${progressPercentage}%`;
+            groupsVisitedBar.setAttribute('aria-valuenow', progressPercentage);
+        }
+
+        // Format currency display
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-KE', {
+                style: 'decimal',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount) + ' KES';
+        }
+
+        // Update collections chart with data from API
+        function updateCollectionsChart(data) {
+            const ctx = document.getElementById('collectionsChart');
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [
+                        'Service Fees',
+                        'Registration Fees',
+                        'Loan Collections',
+                        'Project Funds',
+                        'Welfare'
+                    ],
+                    datasets: [{
+                        data: [
+                            data.total_service_fees,
+                            data.total_registrations,
+                            data.total_loans,
+                            data.total_projects,
+                            data.total_welfare
+                        ],
+                        backgroundColor: [
+                            '#4e73df', // primary
+                            '#1cc88a', // success
+                            '#36b9cc', // info
+                            '#f6c23e', // warning
+                            '#e74a3b'  // danger
+                        ],
+                        hoverBackgroundColor: [
+                            '#2e59d9',
+                            '#17a673',
+                            '#2c9faf',
+                            '#dda20a',
+                            '#be2617'
+                        ],
+                        hoverBorderColor: "rgba(234, 236, 244, 1)",
+                    }],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    tooltips: {
+                        backgroundColor: "rgb(255,255,255)",
+                        bodyFontColor: "#858796",
+                        borderColor: '#dddfeb',
+                        borderWidth: 1,
+                        xPadding: 15,
+                        yPadding: 15,
+                        displayColors: false,
+                        caretPadding: 10,
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                return data.labels[tooltipItem.index] + ': ' + 
+                                    formatCurrency(data.datasets[0].data[tooltipItem.index]);
+                            }
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                    cutoutPercentage: 70,
+                },
+            });
+        }
+
+        // Update recent collections table
+        function updateRecentCollections(collections) {
+            const tableBody = document.getElementById('recent-collections-body');
+            const noCollectionsElement = document.getElementById('no-recent-collections');
+            
+            if (collections.length === 0) {
+                tableBody.innerHTML = '';
+                noCollectionsElement.classList.remove('d-none');
+                return;
+            }
+            
+            noCollectionsElement.classList.add('d-none');
+            tableBody.innerHTML = '';
+            
+            collections.forEach(collection => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDate(collection.date)}</td>
+                    <td>${collection.group_name}</td>
+                    <td>${collection.type}</td>
+                    <td>${formatCurrency(collection.amount)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-KE', options);
+        }
+
+        // Setup offline mode button
+        document.getElementById('btn-offline-mode').addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('Offline mode will sync data when you reconnect to the internet.');
+        });
+    });
+</script>
+{% endblock %} 

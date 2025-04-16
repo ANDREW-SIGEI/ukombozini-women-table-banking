@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Visit Report Details - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('field_officers_web.list_officers') }}">Field Officers</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('field_officers_web.visit_reports') }}">Visit Reports</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Report Details</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-3">Visit Report</h2>
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Report Details</h5>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editReportModal">
+                            <i class="fas fa-edit me-1"></i> Edit
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteReportModal">
+                            <i class="fas fa-trash me-1"></i> Delete
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Field Officer</h6>
+                            <p class="lead">
+                                <a href="{{ url_for('field_officers_web.view_officer', id=report.officer_id) }}">
+                                    {{ report.officer.first_name }} {{ report.officer.last_name }}
+                                </a>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-2">Group</h6>
+                            <p class="lead">
+                                <a href="{{ url_for('groups.view_group', id=report.group_id) }}">
+                                    {{ report.group.name }}
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <h6 class="text-muted mb-2">Visit Date</h6>
+                            <p>{{ report.visit_date.strftime('%d %B, %Y') if report.visit_date else 'N/A' }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-muted mb-2">Meeting Held</h6>
+                            <p>
+                                {% if report.meeting_held %}
+                                <span class="badge bg-success">Yes</span>
+                                {% else %}
+                                <span class="badge bg-danger">No</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-muted mb-2">Attendance</h6>
+                            <p>{{ report.attendance_percentage|int }}%</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Status</h6>
+                        <p>
+                            {% if report.status == 'completed' %}
+                            <span class="badge bg-success">Completed</span>
+                            {% elif report.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ report.status|title }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Report Content</h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="mb-0">{{ report.report_content|nl2br }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if report.challenges %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Challenges & Issues</h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="mb-0">{{ report.challenges|nl2br }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if report.recommendations %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Recommendations</h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="mb-0">{{ report.recommendations|nl2br }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Created At</h6>
+                        <p>{{ report.created_at.strftime('%d %B, %Y %H:%M') if report.created_at else 'N/A' }}</p>
+                    </div>
+                    
+                    {% if report.updated_at and report.updated_at != report.created_at %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Last Updated</h6>
+                        <p>{{ report.updated_at.strftime('%d %B, %Y %H:%M') if report.updated_at else 'N/A' }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <h2 class="mb-3">Actions</h2>
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('field_officers_web.list_officers') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-users me-1"></i> All Field Officers
+                        </a>
+                        <a href="{{ url_for('field_officers_web.view_officer', id=report.officer_id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-user me-1"></i> View Officer Profile
+                        </a>
+                        <a href="{{ url_for('groups.view_group', id=report.group_id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-users me-1"></i> View Group Details
+                        </a>
+                        <a href="{{ url_for('field_officers_web.visit_reports') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-clipboard-list me-1"></i> All Visit Reports
+                        </a>
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newReportModal">
+                            <i class="fas fa-plus me-1"></i> Create New Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Group Information</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ report.group.name }}</h6>
+                    <p class="text-muted">{{ report.group.description|truncate(100) }}</p>
+                    <ul class="list-group list-group-flush mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Members
+                            <span class="badge bg-primary rounded-pill">{{ report.group.member_count }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Location
+                            <span>{{ report.group.location }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Meeting Day
+                            <span>{{ report.group.meeting_day|title if report.group.meeting_day else 'N/A' }}</span>
+                        </li>
+                    </ul>
+                    <div class="d-grid">
+                        <a href="{{ url_for('groups.view_group', id=report.group_id) }}" class="btn btn-sm btn-outline-primary">
+                            View Full Group Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteReportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this visit report? This action cannot be undone.</p>
+                <p class="fw-bold">Group: {{ report.group.name }}</p>
+                <p class="fw-bold">Visit Date: {{ report.visit_date.strftime('%d %b, %Y') if report.visit_date else 'N/A' }}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('field_officers_web.delete_report', id=report.id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger">Delete Report</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Report Modal -->
+<div class="modal fade" id="editReportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Visit Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('field_officers_web.update_report', id=report.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="officer_id" class="form-label">Field Officer</label>
+                            <select class="form-select" id="officer_id" name="officer_id" required>
+                                {% for officer in officers %}
+                                <option value="{{ officer.id }}" {% if officer.id == report.officer_id %}selected{% endif %}>
+                                    {{ officer.first_name }} {{ officer.last_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="group_id" class="form-label">Group</label>
+                            <select class="form-select" id="group_id" name="group_id" required>
+                                {% for group in groups %}
+                                <option value="{{ group.id }}" {% if group.id == report.group_id %}selected{% endif %}>
+                                    {{ group.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="visit_date" class="form-label">Visit Date</label>
+                            <input type="date" class="form-control" id="visit_date" name="visit_date" value="{{ report.visit_date.strftime('%Y-%m-%d') if report.visit_date else '' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="meeting_held" class="form-label">Was Meeting Held?</label>
+                            <select class="form-select" id="meeting_held" name="meeting_held" required>
+                                <option value="true" {% if report.meeting_held %}selected{% endif %}>Yes</option>
+                                <option value="false" {% if not report.meeting_held %}selected{% endif %}>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="attendance_percentage" class="form-label">Attendance Percentage</label>
+                            <input type="number" class="form-control" id="attendance_percentage" name="attendance_percentage" min="0" max="100" value="{{ report.attendance_percentage|int }}" {% if not report.meeting_held %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="completed" {% if report.status == 'completed' %}selected{% endif %}>Completed</option>
+                                <option value="pending" {% if report.status == 'pending' %}selected{% endif %}>Pending</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="report_content" class="form-label">Report Content</label>
+                        <textarea class="form-control" id="report_content" name="report_content" rows="5" required>{{ report.report_content }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="challenges" class="form-label">Challenges & Issues</label>
+                        <textarea class="form-control" id="challenges" name="challenges" rows="3">{{ report.challenges }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="recommendations" class="form-label">Recommendations</label>
+                        <textarea class="form-control" id="recommendations" name="recommendations" rows="3">{{ report.recommendations }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle attendance percentage based on meeting held
+        const meetingHeldSelect = document.getElementById('meeting_held');
+        const attendanceField = document.getElementById('attendance_percentage');
+        
+        meetingHeldSelect.addEventListener('change', function() {
+            if (this.value === 'false') {
+                attendanceField.value = 0;
+                attendanceField.disabled = true;
+            } else {
+                attendanceField.disabled = false;
+            }
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Ukombozini Management System - Home{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="text-center font-weight-light my-2">Welcome to Ukombozini Management System</h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h5 class="card-title">Comprehensive Solution for Financial Management and Community Development</h5>
+                        <p class="card-text">
+                            Ukombozini Management System provides a robust platform for managing tablebanking, 
+                            savings, loans, and community development initiatives.
+                        </p>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-users fa-3x mb-3 text-primary"></i>
+                                    <h5 class="card-title">Group Management</h5>
+                                    <p class="card-text">Register and manage community groups and their members.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-success">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-money-bill-wave fa-3x mb-3 text-success"></i>
+                                    <h5 class="card-title">Financial Services</h5>
+                                    <p class="card-text">Handle savings, loans, and financial transactions efficiently.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100 border-info">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-chart-line fa-3x mb-3 text-info"></i>
+                                    <h5 class="card-title">Reports & Analytics</h5>
+                                    <p class="card-text">Comprehensive reporting and analytics for informed decisions.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-5">Login</a>
+                        <a href="#" class="btn btn-outline-secondary btn-lg px-5 ms-2">Learn More</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
