@@ -1,13 +1,16 @@
-from flask import Blueprint, render_template, jsonify, redirect, url_for
+from flask import Blueprint, render_template, jsonify, redirect, url_for, request
 from flask_login import login_required, current_user
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from sqlalchemy import func
+from datetime import datetime
 
 # Import models directly from their modules
 from app.models.user import User
 from app.models.group import Group
 from app.models.financial import Loan, Saving
+from app.models.agriculture import AgricultureCollection
+from app.models.school_fees import SchoolFeesCollection
 
 bp = Blueprint('main', __name__)
 
@@ -114,7 +117,51 @@ def accounting():
 @bp.route('/agriculture-collection')
 @login_required
 def agriculture_collection():
-    return render_template('collections/agriculture.html')
+    # Get query parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    group_id = request.args.get('group_id', type=int)
+    product_name = request.args.get('product_name')
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
+    
+    # Build the query
+    query = AgricultureCollection.query
+    
+    # Apply filters if provided
+    if group_id:
+        query = query.filter(AgricultureCollection.group_id == group_id)
+    if product_name:
+        query = query.filter(AgricultureCollection.product_name.ilike(f'%{product_name}%'))
+    if from_date:
+        try:
+            from_date_obj = datetime.strptime(from_date, '%Y-%m-%d')
+            query = query.filter(AgricultureCollection.collection_date >= from_date_obj)
+        except ValueError:
+            pass
+    if to_date:
+        try:
+            to_date_obj = datetime.strptime(to_date, '%Y-%m-%d')
+            to_date_obj = to_date_obj.replace(hour=23, minute=59, second=59)
+            query = query.filter(AgricultureCollection.collection_date <= to_date_obj)
+        except ValueError:
+            pass
+    
+    # Order by most recent
+    query = query.order_by(AgricultureCollection.collection_date.desc())
+    
+    # Paginate the results
+    collections = query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    # Get all groups and users for the dropdowns
+    groups = Group.query.all()
+    users = User.query.filter(User.is_active == True).all()
+    
+    return render_template('collections/agriculture.html', 
+                          collections=collections.items,
+                          pagination=collections,
+                          groups=groups,
+                          users=users)
 
 @bp.route('/agriculture-monthly-collection')
 @login_required
@@ -124,7 +171,51 @@ def agriculture_monthly_collection():
 @bp.route('/school-fees-collection')
 @login_required
 def school_fees_collection():
-    return render_template('collections/school_fees.html')
+    # Get query parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    group_id = request.args.get('group_id', type=int)
+    student_name = request.args.get('student_name')
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
+    
+    # Build the query
+    query = SchoolFeesCollection.query
+    
+    # Apply filters if provided
+    if group_id:
+        query = query.filter(SchoolFeesCollection.group_id == group_id)
+    if student_name:
+        query = query.filter(SchoolFeesCollection.student_name.ilike(f'%{student_name}%'))
+    if from_date:
+        try:
+            from_date_obj = datetime.strptime(from_date, '%Y-%m-%d')
+            query = query.filter(SchoolFeesCollection.payment_date >= from_date_obj)
+        except ValueError:
+            pass
+    if to_date:
+        try:
+            to_date_obj = datetime.strptime(to_date, '%Y-%m-%d')
+            to_date_obj = to_date_obj.replace(hour=23, minute=59, second=59)
+            query = query.filter(SchoolFeesCollection.payment_date <= to_date_obj)
+        except ValueError:
+            pass
+    
+    # Order by most recent
+    query = query.order_by(SchoolFeesCollection.payment_date.desc())
+    
+    # Paginate the results
+    collections = query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    # Get all groups and users for the dropdowns
+    groups = Group.query.all()
+    users = User.query.filter(User.is_active == True).all()
+    
+    return render_template('collections/school_fees.html', 
+                          collections=collections.items,
+                          pagination=collections,
+                          groups=groups,
+                          users=users)
 
 # Reports & Analytics
 @bp.route('/tablebanking-reports')

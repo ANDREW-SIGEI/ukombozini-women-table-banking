@@ -44,6 +44,38 @@ class AgricultureCollection(db.Model):
     
     def __repr__(self):
         return f'<AgricultureCollection {self.id}>'
+        
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'group_id': self.group_id,
+            'product_name': self.product_name,
+            'quantity': float(self.quantity),
+            'unit': self.unit,
+            'unit_price': float(self.unit_price),
+            'total_amount': float(self.total_amount),
+            'collection_date': self.collection_date.isoformat() if self.collection_date else None,
+            'status': self.status,
+            'storage_location': self.storage_location,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+    @staticmethod
+    def to_collection_dict(query, page, per_page, endpoint, **kwargs):
+        resources = query.paginate(page=page, per_page=per_page, error_out=False)
+        data = {
+            'items': [item.to_dict() for item in resources.items],
+            '_meta': {
+                'page': page,
+                'per_page': per_page,
+                'total_pages': resources.pages,
+                'total_items': resources.total
+            }
+        }
+        return data
 
 class SchoolFeesCollection(db.Model):
     __tablename__ = 'school_fees_collections'
@@ -70,6 +102,39 @@ class SchoolFeesCollection(db.Model):
     
     def __repr__(self):
         return f'<SchoolFeesCollection {self.id}>'
+        
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'group_id': self.group_id,
+            'student_name': self.student_name,
+            'school_name': self.school_name,
+            'term': self.term,
+            'year': self.year,
+            'amount': float(self.amount),
+            'payment_date': self.payment_date.isoformat() if self.payment_date else None,
+            'status': self.status,
+            'payment_method': self.payment_method,
+            'reference_number': self.reference_number,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+    
+    @staticmethod
+    def to_collection_dict(query, page, per_page, endpoint, **kwargs):
+        resources = query.paginate(page=page, per_page=per_page, error_out=False)
+        data = {
+            'items': [item.to_dict() for item in resources.items],
+            '_meta': {
+                'page': page,
+                'per_page': per_page,
+                'total_pages': resources.pages,
+                'total_items': resources.total
+            }
+        }
+        return data
 
 class AgriculturePayment(db.Model):
     __tablename__ = 'agriculture_payments'
