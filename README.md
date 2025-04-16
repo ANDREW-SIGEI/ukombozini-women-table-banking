@@ -1,5 +1,10 @@
 # Ukombozini Management System
 
+![](https://github.com/ANDREW-SIGEI/ukombozini-women-table-banking/actions/workflows/1-create-a-branch.yml/badge.svg)
+![](https://github.com/ANDREW-SIGEI/ukombozini-women-table-banking/actions/workflows/2-commit-a-file.yml/badge.svg)
+![](https://github.com/ANDREW-SIGEI/ukombozini-women-table-banking/actions/workflows/3-open-a-pull-request.yml/badge.svg)
+![](https://github.com/ANDREW-SIGEI/ukombozini-women-table-banking/actions/workflows/4-merge-your-pull-request.yml/badge.svg)
+
 A comprehensive management system for microfinance and savings groups.
 
 ## Features
@@ -145,4 +150,4 @@ flask run --debug
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License.
