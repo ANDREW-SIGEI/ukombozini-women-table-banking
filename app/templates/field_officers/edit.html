@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Field Officer - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('field_officers.list_officers') }}">Field Officers</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('field_officers.view_officer', id=officer.id) }}">{{ officer.first_name }} {{ officer.last_name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Edit</li>
+                </ol>
+            </nav>
+            <h1 class="mt-2">Edit Field Officer</h1>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-10 col-lg-8">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Field Officer Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('field_officers.edit_officer', id=officer.id) }}">
+                        <!-- Account Information -->
+                        <h6 class="border-bottom pb-2 mb-3">Account Information</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="username" name="username" value="{{ officer.username }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ officer.email }}" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="new_password" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="new_password" name="new_password" placeholder="Leave blank to keep current password">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Leave blank to keep current password">
+                            </div>
+                        </div>
+                        
+                        <!-- Personal Information -->
+                        <h6 class="border-bottom pb-2 mb-3 mt-4">Personal Information</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" value="{{ officer.first_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" value="{{ officer.last_name }}">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <input type="text" class="form-control" id="phone_number" name="phone_number" value="{{ officer.phone_number }}">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" {% if officer.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">Active Account</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> Update Field Officer
+                            </button>
+                            <a href="{{ url_for('field_officers.view_officer', id=officer.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-1"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-10 col-lg-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Field Officer Role</h5>
+                </div>
+                <div class="card-body">
+                    <p>Field Officers are responsible for:</p>
+                    <ul>
+                        <li>Regular visits to assigned groups</li>
+                        <li>Collecting service fees from groups</li>
+                        <li>Monitoring group activities and performance</li>
+                        <li>Providing guidance and support to group leaders</li>
+                        <li>Submitting reports on group visits and activities</li>
+                        <li>Ensuring compliance with organizational policies</li>
+                    </ul>
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i> Setting a field officer as inactive will prevent them from logging in, but will not remove their assignments or reports.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Password validation
+        const passwordField = document.getElementById('new_password');
+        const confirmField = document.getElementById('confirm_password');
+        const form = document.querySelector('form');
+        
+        form.addEventListener('submit', function(e) {
+            if (passwordField.value !== confirmField.value && passwordField.value.length > 0) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+            }
+        });
+    });
+</script>
+{% endblock %} 

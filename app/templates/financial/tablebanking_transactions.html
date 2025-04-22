@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Tablebanking Transactions - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="page-title"><i class="fas fa-exchange-alt me-2"></i>Tablebanking Transactions</h2>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{{ url_for('financial.tablebanking_deposit') }}" class="btn btn-success me-2" aria-label="Record deposit">
+                <i class="fas fa-plus-circle me-1"></i> Record Deposit
+            </a>
+            <a href="{{ url_for('financial.tablebanking_withdrawal') }}" class="btn btn-warning me-2" aria-label="Record withdrawal">
+                <i class="fas fa-minus-circle me-1"></i> Record Withdrawal
+            </a>
+            <a href="{{ url_for('financial.tablebanking') }}" class="btn btn-primary" aria-label="Go to tablebanking dashboard">
+                <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('financial.tablebanking') }}">Tablebanking</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Transactions</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Transaction Filters</h5>
+            <button class="btn btn-sm btn-light" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="true" aria-controls="filterCollapse" aria-label="Toggle filters">
+                <i class="fas fa-filter"></i> <span class="d-none d-md-inline">Filters</span>
+            </button>
+        </div>
+        <div class="collapse show" id="filterCollapse">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('financial.tablebanking_transactions') }}" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="member_id" class="form-label">Member</label>
+                        <select class="form-select" id="member_id" name="member_id" aria-label="Filter by member">
+                            <option value="">All Members</option>
+                            {% for member in members %}
+                                <option value="{{ member.id }}" {% if member_id == member.id %}selected{% endif %}>
+                                    {{ member.first_name }} {{ member.last_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="group_id" class="form-label">Group</label>
+                        <select class="form-select" id="group_id" name="group_id" aria-label="Filter by group">
+                            <option value="">All Groups</option>
+                            {% for group in groups %}
+                                <option value="{{ group.id }}" {% if group_id == group.id %}selected{% endif %}>
+                                    {{ group.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="type" class="form-label">Transaction Type</label>
+                        <select class="form-select" id="type" name="type" aria-label="Filter by transaction type">
+                            <option value="">All Types</option>
+                            <option value="deposit" {% if transaction_type == 'deposit' %}selected{% endif %}>Deposits</option>
+                            <option value="withdrawal" {% if transaction_type == 'withdrawal' %}selected{% endif %}>Withdrawals</option>
+                            <option value="interest" {% if transaction_type == 'interest' %}selected{% endif %}>Interest</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="from_date" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="from_date" name="from_date" value="{{ from_date }}" aria-label="Filter from date">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="to_date" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="to_date" name="to_date" value="{{ to_date }}" aria-label="Filter to date">
+                    </div>
+                    <div class="col-md-9 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2" aria-label="Apply filters">
+                            <i class="fas fa-search me-1"></i> Apply Filters
+                        </button>
+                        <a href="{{ url_for('financial.tablebanking_transactions') }}" class="btn btn-outline-secondary me-2" aria-label="Clear all filters">
+                            <i class="fas fa-times me-1"></i> Clear
+                        </a>
+                        <div class="dropdown ms-2">
+                            <button class="btn btn-outline-success dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Export options">
+                                <i class="fas fa-download me-1"></i> Export
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                                <li><a class="dropdown-item" href="#" id="export-csv" aria-label="Export as CSV">CSV</a></li>
+                                <li><a class="dropdown-item" href="#" id="export-excel" aria-label="Export as Excel">Excel</a></li>
+                                <li><a class="dropdown-item" href="#" id="export-pdf" aria-label="Export as PDF">PDF</a></li>
+                            </ul>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary ms-2" id="print-btn" aria-label="Print transactions">
+                            <i class="fas fa-print me-1"></i> Print
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" aria-label="Tablebanking transactions">
+                    <thead class="table-primary">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Member</th>
+                            <th scope="col">Group</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Amount (KES)</th>
+                            <th scope="col">Notes</th>
+                            <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.id }}</td>
+                            <td>{{ transaction.transaction_date.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if transaction.member %}
+                                    {{ transaction.member.first_name }} {{ transaction.member.last_name }}
+                                {% else %}
+                                    <span class="text-muted">- N/A -</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.group %}
+                                    {{ transaction.group.name }}
+                                {% else %}
+                                    <span class="text-muted">- N/A -</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.transaction_type == 'deposit' %}
+                                    <span class="badge bg-success">Deposit</span>
+                                {% elif transaction.transaction_type == 'withdrawal' %}
+                                    <span class="badge bg-warning text-dark">Withdrawal</span>
+                                {% elif transaction.transaction_type == 'interest' %}
+                                    <span class="badge bg-info text-dark">Interest</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ transaction.transaction_type }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">{{ "{:,.2f}".format(transaction.amount) }}</td>
+                            <td>
+                                {% if transaction.notes %}
+                                    {{ transaction.notes|truncate(30) }}
+                                {% else %}
+                                    <span class="text-muted">- No notes -</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-primary view-transaction" 
+                                        data-id="{{ transaction.id }}"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#viewTransactionModal"
+                                        aria-label="View transaction details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                {% if transaction.transaction_type != 'interest' %}
+                                <a href="#" class="btn btn-sm btn-success" aria-label="Print receipt for this transaction">
+                                    <i class="fas fa-receipt"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-info-circle me-2"></i> No transactions found.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                    <p class="text-muted">Showing {{ transactions|length }} of {{ pagination.total }} transactions</p>
+                </div>
+                <nav aria-label="Transaction pagination">
+                    <ul class="pagination">
+                        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('financial.tablebanking_transactions', page=pagination.prev_num, member_id=member_id, group_id=group_id, type=transaction_type, from_date=from_date, to_date=to_date) }}" aria-label="Previous page">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('financial.tablebanking_transactions', page=page_num, member_id=member_id, group_id=group_id, type=transaction_type, from_date=from_date, to_date=to_date) }}" aria-label="Go to page {{ page_num }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">…</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                            <a class="page-link" href="{{ url_for('financial.tablebanking_transactions', page=pagination.next_num, member_id=member_id, group_id=group_id, type=transaction_type, from_date=from_date, to_date=to_date) }}" aria-label="Next page">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction View Modal -->
+<div class="modal fade" id="viewTransactionModal" tabindex="-1" aria-labelledby="viewTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewTransactionModalLabel">Transaction Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3 transaction-type-badge">
+                    <span class="badge bg-success fs-5 px-4 py-2">Deposit</span>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <strong>Transaction ID:</strong>
+                        <p id="transaction-id" class="mb-0">-</p>
+                    </div>
+                    <div class="col-6">
+                        <strong>Date:</strong>
+                        <p id="transaction-date" class="mb-0">-</p>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <strong>Member:</strong>
+                        <p id="transaction-member" class="mb-0">-</p>
+                    </div>
+                    <div class="col-6">
+                        <strong>Group:</strong>
+                        <p id="transaction-group" class="mb-0">-</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Amount:</strong>
+                    <h3 id="transaction-amount" class="mb-0">KES 0.00</h3>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Notes:</strong>
+                    <p id="transaction-notes" class="mb-0">-</p>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Recorded By:</strong>
+                    <p id="transaction-recorder" class="mb-0">-</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="modal-print-receipt" aria-label="Print receipt">
+                    <i class="fas fa-receipt me-1"></i> Print Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default dates if not set
+        if (!document.getElementById('from_date').value) {
+            const from = new Date();
+            from.setDate(from.getDate() - 30); // 30 days ago
+            document.getElementById('from_date').value = from.toISOString().slice(0, 10);
+        }
+        
+        if (!document.getElementById('to_date').value) {
+            const to = new Date();
+            document.getElementById('to_date').value = to.toISOString().slice(0, 10);
+        }
+        
+        // Handle view transaction button clicks
+        document.querySelectorAll('.view-transaction').forEach(button => {
+            button.addEventListener('click', function() {
+                const transactionId = this.getAttribute('data-id');
+                
+                // In a real application, fetch data from an API endpoint
+                fetch(`/api/tablebanking/transaction/${transactionId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const transaction = data.transaction;
+                            document.getElementById('transaction-id').textContent = transaction.id;
+                            document.getElementById('transaction-date').textContent = transaction.date;
+                            document.getElementById('transaction-member').textContent = transaction.member;
+                            document.getElementById('transaction-group').textContent = transaction.group || 'N/A';
+                            document.getElementById('transaction-amount').textContent = `KES ${parseFloat(transaction.amount).toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            document.getElementById('transaction-notes').textContent = transaction.notes || 'No notes';
+                            document.getElementById('transaction-recorder').textContent = transaction.recorded_by;
+                            
+                            // Update the badge
+                            const badge = document.querySelector('.transaction-type-badge span');
+                            if (transaction.type === 'deposit') {
+                                badge.className = 'badge bg-success fs-5 px-4 py-2';
+                                badge.textContent = 'Deposit';
+                            } else if (transaction.type === 'withdrawal') {
+                                badge.className = 'badge bg-warning text-dark fs-5 px-4 py-2';
+                                badge.textContent = 'Withdrawal';
+                            } else if (transaction.type === 'interest') {
+                                badge.className = 'badge bg-info text-dark fs-5 px-4 py-2';
+                                badge.textContent = 'Interest';
+                            } else {
+                                badge.className = 'badge bg-secondary fs-5 px-4 py-2';
+                                badge.textContent = transaction.type;
+                            }
+                            
+                            // Hide/show print receipt button
+                            document.getElementById('modal-print-receipt').style.display = 
+                                transaction.type === 'interest' ? 'none' : 'inline-block';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching transaction:', error);
+                    });
+            });
+        });
+        
+        // Export buttons functionality
+        document.getElementById('export-csv').addEventListener('click', function(e) {
+            e.preventDefault();
+            exportTransactions('csv');
+        });
+        
+        document.getElementById('export-excel').addEventListener('click', function(e) {
+            e.preventDefault();
+            exportTransactions('excel');
+        });
+        
+        document.getElementById('export-pdf').addEventListener('click', function(e) {
+            e.preventDefault();
+            exportTransactions('pdf');
+        });
+        
+        // Print button functionality
+        document.getElementById('print-btn').addEventListener('click', function() {
+            window.print();
+        });
+        
+        // Receipt printing functionality
+        document.getElementById('modal-print-receipt').addEventListener('click', function() {
+            const transactionId = document.getElementById('transaction-id').textContent;
+            window.open(`/financial/tablebanking/receipt/${transactionId}`, '_blank');
+        });
+        
+        function exportTransactions(format) {
+            const url = new URL(window.location.href);
+            url.searchParams.append('export', format);
+            window.location.href = url.toString();
+        }
+    });
+</script>
+{% endblock %} 

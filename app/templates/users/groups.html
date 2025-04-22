@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+
+{% block title %}Groups Registration{% endblock %}
+
+{% block styles %}
+<style>
+    .group-status {
+        width: 12px;
+        height: 12px;
+        display: inline-block;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    .status-active { background-color: #28a745; }
+    .status-inactive { background-color: #dc3545; }
+    .status-pending { background-color: #ffc107; }
+    
+    .member-count {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .location-badge {
+        background-color: #f8f9fa;
+        color: #495057;
+        font-size: 0.8rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.25rem;
+    }
+    
+    .group-card {
+        transition: transform 0.2s;
+        height: 100%;
+    }
+    
+    .group-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    @media (max-width: 768px) {
+        .card-group-grid {
+            grid-template-columns: repeat(1, 1fr) !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2">Groups Registration</h1>
+    <div>
+        <button class="btn btn-outline-secondary me-2" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+            <i class="fas fa-filter"></i> Filter
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerGroupModal">
+            <i class="fas fa-plus"></i> Register Group
+        </button>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="collapse mb-4" id="filterCollapse">
+    <div class="card card-body">
+        <form id="filterForm" class="row g-3">
+            <div class="col-md-4">
+                <label for="nameFilter" class="form-label">Group Name</label>
+                <input type="text" class="form-control" id="nameFilter" placeholder="Search by name">
+            </div>
+            <div class="col-md-3">
+                <label for="locationFilter" class="form-label">Location</label>
+                <select class="form-select" id="locationFilter">
+                    <option value="">All Locations</option>
+                    <option value="Nairobi">Nairobi</option>
+                    <option value="Kiambu">Kiambu</option>
+                    <option value="Mombasa">Mombasa</option>
+                    <option value="Nakuru">Nakuru</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="statusFilter" class="form-label">Status</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="pending">Pending</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Apply</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card h-100 border-left-primary">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Groups</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">34</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card h-100 border-left-success">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Groups</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">28</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card h-100 border-left-info">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Total Members</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">589</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-friends fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card h-100 border-left-warning">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">New This Month</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">3</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-plus fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Switcher -->
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div class="btn-group" role="group" aria-label="View Switcher">
+        <button type="button" class="btn btn-outline-secondary active" id="gridViewBtn">
+            <i class="fas fa-th"></i> Grid View
+        </button>
+        <button type="button" class="btn btn-outline-secondary" id="tableViewBtn">
+            <i class="fas fa-list"></i> Table View
+        </button>
+    </div>
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="exportGroupsCSV" title="Export groups to CSV">
+            <i class="fas fa-file-csv"></i> Export CSV
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="printGroups" title="Print groups list">
+            <i class="fas fa-print"></i> Print
+        </button>
+    </div>
+</div>
+
+<!-- Grid View -->
+<div id="gridView" class="mb-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for i in range(1, 10) %}
+        <div class="col">
+            <div class="card group-card">
+                <div class="card-header d-flex justify-content-between">
+                    <h5 class="card-title mb-0">
+                        {% if i % 3 == 0 %}Kiambu Group {{ i }}{% elif i % 3 == 1 %}Nairobi Group {{ i }}{% else %}Mombasa Group {{ i }}{% endif %}
+                    </h5>
+                    <div>
+                        {% if i % 5 != 0 %}
+                        <span class="badge bg-success"><span class="group-status status-active"></span>Active</span>
+                        {% elif i % 5 == 0 %}
+                        <span class="badge bg-warning"><span class="group-status status-pending"></span>Pending</span>
+                        {% else %}
+                        <span class="badge bg-danger"><span class="group-status status-inactive"></span>Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <span class="location-badge">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {% if i % 3 == 0 %}Kiambu County{% elif i % 3 == 1 %}Nairobi County{% else %}Mombasa County{% endif %}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Registration Date:</span>
+                        <span>{{ '2023-0%d-01' % ((i % 12) + 1) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Members:</span>
+                        <span class="member-count">{{ 15 + i * 3 }} members</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Field Officer:</span>
+                        <span>Officer {{ i }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Meetings:</span>
+                        <span>{% if i % 2 == 0 %}Bi-weekly{% else %}Monthly{% endif %}</span>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewGroupModal" title="View group details">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editGroupModal" title="Edit group details">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteGroupModal" title="Delete group">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Table View (hidden by default) -->
+<div id="tableView" class="mb-4" style="display: none;">
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="groupsTable">
+                    <thead>
+                        <tr>
+                            <th>Group ID</th>
+                            <th>Group Name</th>
+                            <th>Location</th>
+                            <th>Members</th>
+                            <th>Registration Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in range(1, 15) %}
+                        <tr>
+                            <td>GRP-{{ '%03d' % i }}</td>
+                            <td>{% if i % 3 == 0 %}Kiambu Group {{ i }}{% elif i % 3 == 1 %}Nairobi Group {{ i }}{% else %}Mombasa Group {{ i }}{% endif %}</td>
+                            <td>{% if i % 3 == 0 %}Kiambu County{% elif i % 3 == 1 %}Nairobi County{% else %}Mombasa County{% endif %}</td>
+                            <td>{{ 15 + i * 3 }} members</td>
+                            <td>{{ '2023-0%d-01' % ((i % 12) + 1) }}</td>
+                            <td>
+                                {% if i % 5 != 0 %}
+                                <span class="badge bg-success"><span class="group-status status-active"></span>Active</span>
+                                {% elif i % 5 == 0 %}
+                                <span class="badge bg-warning"><span class="group-status status-pending"></span>Pending</span>
+                                {% else %}
+                                <span class="badge bg-danger"><span class="group-status status-inactive"></span>Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewGroupModal" title="View group details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editGroupModal" title="Edit group details">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteGroupModal" title="Delete group">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Register Group Modal -->
+<div class="modal fade" id="registerGroupModal" tabindex="-1" aria-labelledby="registerGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="registerGroupModalLabel">Register New Group</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="registerGroupForm" class="row g-3">
+                    <!-- Group Information -->
+                    <h6 class="col-12 border-bottom pb-2">Group Information</h6>
+                    <div class="col-md-6">
+                        <label for="groupName" class="form-label">Group Name</label>
+                        <input type="text" class="form-control" id="groupName" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="registrationDate" class="form-label">Registration Date</label>
+                        <input type="date" class="form-control" id="registrationDate" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="county" class="form-label">County</label>
+                        <select class="form-select" id="county" required>
+                            <option value="">Select County</option>
+                            <option value="Nairobi">Nairobi</option>
+                            <option value="Kiambu">Kiambu</option>
+                            <option value="Mombasa">Mombasa</option>
+                            <option value="Nakuru">Nakuru</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="subcounty" class="form-label">Sub-County</label>
+                        <input type="text" class="form-control" id="subcounty">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="ward" class="form-label">Ward</label>
+                        <input type="text" class="form-control" id="ward">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="village" class="form-label">Village/Estate</label>
+                        <input type="text" class="form-control" id="village">
+                    </div>
+                    
+                    <!-- Meeting Information -->
+                    <h6 class="col-12 border-bottom pb-2 mt-3">Meeting Information</h6>
+                    <div class="col-md-6">
+                        <label for="meetingFrequency" class="form-label">Meeting Frequency</label>
+                        <select class="form-select" id="meetingFrequency">
+                            <option value="weekly">Weekly</option>
+                            <option value="biweekly">Bi-weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="meetingDay" class="form-label">Meeting Day</label>
+                        <select class="form-select" id="meetingDay">
+                            <option value="monday">Monday</option>
+                            <option value="tuesday">Tuesday</option>
+                            <option value="wednesday">Wednesday</option>
+                            <option value="thursday">Thursday</option>
+                            <option value="friday">Friday</option>
+                            <option value="saturday">Saturday</option>
+                            <option value="sunday">Sunday</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="meetingTime" class="form-label">Meeting Time</label>
+                        <input type="time" class="form-control" id="meetingTime">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="meetingLocation" class="form-label">Meeting Location</label>
+                        <input type="text" class="form-control" id="meetingLocation">
+                    </div>
+                    
+                    <!-- Field Officer Assignment -->
+                    <h6 class="col-12 border-bottom pb-2 mt-3">Field Officer Assignment</h6>
+                    <div class="col-md-6">
+                        <label for="fieldOfficer" class="form-label">Assigned Field Officer</label>
+                        <select class="form-select" id="fieldOfficer">
+                            <option value="">Select Field Officer</option>
+                            <option value="1">John Doe</option>
+                            <option value="2">Jane Smith</option>
+                            <option value="3">Peter Kamau</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="groupStatus" class="form-label">Group Status</label>
+                        <select class="form-select" id="groupStatus">
+                            <option value="active">Active</option>
+                            <option value="pending">Pending</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Additional Notes -->
+                    <div class="col-12 mt-3">
+                        <label for="notes" class="form-label">Additional Notes</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveNewGroup">Register Group</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View/Edit/Delete Modals would go here but are omitted for brevity -->
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable for the groups table
+        const groupsTable = $('#groupsTable').DataTable({
+            responsive: true,
+            language: {
+                search: "Search groups:",
+                lengthMenu: "Show _MENU_ groups per page",
+                info: "Showing _START_ to _END_ of _TOTAL_ groups"
+            }
+        });
+        
+        // View switcher functionality
+        document.getElementById('gridViewBtn').addEventListener('click', function() {
+            document.getElementById('gridView').style.display = 'block';
+            document.getElementById('tableView').style.display = 'none';
+            document.getElementById('gridViewBtn').classList.add('active');
+            document.getElementById('tableViewBtn').classList.remove('active');
+        });
+        
+        document.getElementById('tableViewBtn').addEventListener('click', function() {
+            document.getElementById('gridView').style.display = 'none';
+            document.getElementById('tableView').style.display = 'block';
+            document.getElementById('gridViewBtn').classList.remove('active');
+            document.getElementById('tableViewBtn').classList.add('active');
+        });
+        
+        // Handle group registration form submission
+        document.getElementById('saveNewGroup').addEventListener('click', function() {
+            // Validate the form
+            const form = document.getElementById('registerGroupForm');
+            if (!form.checkValidity()) {
+                // Create a submit event to trigger validation UI
+                const event = new Event('submit', {
+                    bubbles: true,
+                    cancelable: true,
+                });
+                form.dispatchEvent(event);
+                return;
+            }
+            
+            // Simulate API call to save group
+            showToast('Group registered successfully!', 'success');
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('registerGroupModal'));
+            modal.hide();
+            
+            // In a real app, you would reload the data or add the new group to the table/grid here
+        });
+        
+        // Handle filter form submission
+        document.getElementById('filterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // In a real app, this would filter both the grid and table views
+            const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
+            
+            // For table view
+            groupsTable.search(nameFilter).draw();
+            
+            // For grid view
+            showToast('Filters applied', 'info');
+        });
+        
+        // Export to CSV button
+        document.getElementById('exportGroupsCSV').addEventListener('click', function() {
+            showToast('Exporting groups to CSV...', 'info');
+        });
+        
+        // Print button
+        document.getElementById('printGroups').addEventListener('click', function() {
+            window.print();
+        });
+    });
+</script>
+{% endblock %} 

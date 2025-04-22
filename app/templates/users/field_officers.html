@@ -1,0 +1,532 @@
+{% extends "base.html" %}
+
+{% block title %}Field Officers Management{% endblock %}
+
+{% block styles %}
+<style>
+    .officer-status {
+        width: 12px;
+        height: 12px;
+        display: inline-block;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    .status-active { background-color: #28a745; }
+    .status-inactive { background-color: #dc3545; }
+    .status-onleave { background-color: #ffc107; }
+    
+    .badge-workload {
+        width: 100%;
+        height: 5px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        margin-top: 3px;
+    }
+    
+    .badge-workload-fill {
+        height: 100%;
+        border-radius: 3px;
+        background-color: #007bff;
+    }
+    
+    .high-workload { background-color: #dc3545; }
+    .medium-workload { background-color: #ffc107; }
+    .low-workload { background-color: #28a745; }
+    
+    .metrics-card {
+        border-left: 4px solid #007bff;
+        transition: transform 0.2s;
+    }
+    
+    .metrics-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .officer-card {
+        transition: all 0.3s;
+        height: 100%;
+    }
+    
+    .officer-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .performance-indicator {
+        height: 4px;
+        width: 100%;
+        background-color: #e9ecef;
+        margin-top: 5px;
+        border-radius: 2px;
+    }
+    
+    .performance-fill {
+        height: 100%;
+        border-radius: 2px;
+    }
+    
+    .excellent { background-color: #28a745; }
+    .good { background-color: #17a2b8; }
+    .average { background-color: #ffc107; }
+    .poor { background-color: #dc3545; }
+    
+    @media (max-width: 768px) {
+        .action-buttons .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2">Field Officers Management</h1>
+    <div>
+        <button class="btn btn-outline-secondary me-2" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
+            <i class="fas fa-filter"></i> Filter
+        </button>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addOfficerModal">
+            <i class="fas fa-plus"></i> Add Officer
+        </button>
+    </div>
+</div>
+
+<!-- Filter Section -->
+<div class="collapse mb-4" id="filterCollapse">
+    <div class="card card-body">
+        <form id="filterForm" class="row g-3">
+            <div class="col-md-3">
+                <label for="nameFilter" class="form-label">Name</label>
+                <input type="text" class="form-control" id="nameFilter" placeholder="Search by name">
+            </div>
+            <div class="col-md-3">
+                <label for="locationFilter" class="form-label">Location</label>
+                <select class="form-select" id="locationFilter">
+                    <option value="">All Locations</option>
+                    <option value="Nairobi">Nairobi</option>
+                    <option value="Kiambu">Kiambu</option>
+                    <option value="Mombasa">Mombasa</option>
+                    <option value="Nakuru">Nakuru</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="statusFilter" class="form-label">Status</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="onleave">On Leave</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="workloadFilter" class="form-label">Workload</label>
+                <select class="form-select" id="workloadFilter">
+                    <option value="">All</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metrics-card h-100" style="border-left-color: #4e73df;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Officers</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">12</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-tie fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metrics-card h-100" style="border-left-color: #1cc88a;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Active Officers</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">10</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metrics-card h-100" style="border-left-color: #36b9cc;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Assigned Groups</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">34</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card metrics-card h-100" style="border-left-color: #f6c23e;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Average Workload</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">3.4 Groups</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-balance-scale fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Switcher -->
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div class="btn-group" role="group" aria-label="View Switcher">
+        <button type="button" class="btn btn-outline-secondary active" id="cardViewBtn">
+            <i class="fas fa-th-large"></i> Card View
+        </button>
+        <button type="button" class="btn btn-outline-secondary" id="tableViewBtn">
+            <i class="fas fa-list"></i> Table View
+        </button>
+    </div>
+    <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="exportCSV" title="Export officers to CSV">
+            <i class="fas fa-file-csv"></i> Export CSV
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="printList" title="Print officers list">
+            <i class="fas fa-print"></i> Print
+        </button>
+    </div>
+</div>
+
+<!-- Card View -->
+<div id="cardView">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for i in range(1, 7) %}
+        <div class="col">
+            <div class="card officer-card">
+                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        {% if i % 3 == 0 %}John Kamau{% elif i % 3 == 1 %}Mary Wangari{% else %}Peter Njoroge{% endif %}
+                    </h5>
+                    <div>
+                        {% if i % 4 != 0 %}
+                        <span class="badge bg-success"><span class="officer-status status-active"></span>Active</span>
+                        {% elif i % 4 == 0 %}
+                        <span class="badge bg-warning"><span class="officer-status status-onleave"></span>On Leave</span>
+                        {% else %}
+                        <span class="badge bg-danger"><span class="officer-status status-inactive"></span>Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 text-center">
+                        <img src="https://via.placeholder.com/150" class="rounded-circle img-thumbnail" width="100" alt="Officer Photo">
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Employee ID:</span>
+                        <span>FO-{{ '%03d' % i }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Location:</span>
+                        <span>{% if i % 3 == 0 %}Kiambu{% elif i % 3 == 1 %}Nairobi{% else %}Mombasa{% endif %}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Phone:</span>
+                        <span>+254{{ 700000000 + i * 111111 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Email:</span>
+                        <span>officer{{ i }}@ukombozini.org</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>Groups Assigned:</span>
+                        <span>{{ i + 2 }}</span>
+                    </div>
+                    <div class="badge-workload">
+                        <div class="badge-workload-fill {% if i + 2 > 5 %}high-workload{% elif i + 2 > 3 %}medium-workload{% else %}low-workload{% endif %}" style="width: {{ (i + 2) * 10 }}%;"></div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Performance:</span>
+                        <span>{% if i % 4 == 0 %}Excellent{% elif i % 4 == 1 %}Good{% elif i % 4 == 2 %}Average{% else %}Needs Improvement{% endif %}</span>
+                    </div>
+                    <div class="performance-indicator">
+                        <div class="performance-fill {% if i % 4 == 0 %}excellent{% elif i % 4 == 1 %}good{% elif i % 4 == 2 %}average{% else %}poor{% endif %}" style="width: {% if i % 4 == 0 %}95%{% elif i % 4 == 1 %}80%{% elif i % 4 == 2 %}60%{% else %}40%{% endif %};"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-3">
+                        <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewOfficerModal" title="View officer details">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editOfficerModal" title="Edit officer details">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteOfficerModal" title="Delete officer">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Table View (hidden by default) -->
+<div id="tableView" class="mb-4" style="display: none;">
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="officersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Location</th>
+                            <th>Phone</th>
+                            <th>Groups</th>
+                            <th>Performance</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in range(1, 11) %}
+                        <tr>
+                            <td>FO-{{ '%03d' % i }}</td>
+                            <td>{% if i % 3 == 0 %}John Kamau{% elif i % 3 == 1 %}Mary Wangari{% else %}Peter Njoroge{% endif %}</td>
+                            <td>{% if i % 3 == 0 %}Kiambu{% elif i % 3 == 1 %}Nairobi{% else %}Mombasa{% endif %}</td>
+                            <td>+254{{ 700000000 + i * 111111 }}</td>
+                            <td>
+                                <span>{{ i + 2 }}</span>
+                                <div class="badge-workload">
+                                    <div class="badge-workload-fill {% if i + 2 > 5 %}high-workload{% elif i + 2 > 3 %}medium-workload{% else %}low-workload{% endif %}" style="width: {{ (i + 2) * 10 }}%;"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <span>{% if i % 4 == 0 %}Excellent{% elif i % 4 == 1 %}Good{% elif i % 4 == 2 %}Average{% else %}Needs Improvement{% endif %}</span>
+                                <div class="performance-indicator">
+                                    <div class="performance-fill {% if i % 4 == 0 %}excellent{% elif i % 4 == 1 %}good{% elif i % 4 == 2 %}average{% else %}poor{% endif %}" style="width: {% if i % 4 == 0 %}95%{% elif i % 4 == 1 %}80%{% elif i % 4 == 2 %}60%{% else %}40%{% endif %};"></div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if i % 4 != 0 %}
+                                <span class="badge bg-success"><span class="officer-status status-active"></span>Active</span>
+                                {% elif i % 4 == 0 %}
+                                <span class="badge bg-warning"><span class="officer-status status-onleave"></span>On Leave</span>
+                                {% else %}
+                                <span class="badge bg-danger"><span class="officer-status status-inactive"></span>Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="action-buttons">
+                                <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewOfficerModal" title="View officer details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editOfficerModal" title="Edit officer details">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteOfficerModal" title="Delete officer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Officer Modal -->
+<div class="modal fade" id="addOfficerModal" tabindex="-1" aria-labelledby="addOfficerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addOfficerModalLabel">Add New Field Officer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addOfficerForm" class="row g-3">
+                    <!-- Personal Information -->
+                    <h6 class="col-12 border-bottom pb-2">Personal Information</h6>
+                    <div class="col-md-6">
+                        <label for="firstName" class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="firstName" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="lastName" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="lastName" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="idNumber" class="form-label">National ID</label>
+                        <input type="text" class="form-control" id="idNumber" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="phoneNumber" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phoneNumber" placeholder="+254..." required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="emailAddress" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="emailAddress" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="dateOfBirth" class="form-label">Date of Birth</label>
+                        <input type="date" class="form-control" id="dateOfBirth">
+                    </div>
+                    
+                    <!-- Employment Information -->
+                    <h6 class="col-12 border-bottom pb-2 mt-3">Employment Information</h6>
+                    <div class="col-md-6">
+                        <label for="employeeId" class="form-label">Employee ID</label>
+                        <input type="text" class="form-control" id="employeeId" placeholder="FO-..." required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="hireDate" class="form-label">Hire Date</label>
+                        <input type="date" class="form-control" id="hireDate" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="county" class="form-label">County Assignment</label>
+                        <select class="form-select" id="county" required>
+                            <option value="">Select County</option>
+                            <option value="Nairobi">Nairobi</option>
+                            <option value="Kiambu">Kiambu</option>
+                            <option value="Mombasa">Mombasa</option>
+                            <option value="Nakuru">Nakuru</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="officerStatus" class="form-label">Status</label>
+                        <select class="form-select" id="officerStatus">
+                            <option value="active">Active</option>
+                            <option value="onleave">On Leave</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Additional Information -->
+                    <h6 class="col-12 border-bottom pb-2 mt-3">Additional Information</h6>
+                    <div class="col-md-12">
+                        <label for="qualifications" class="form-label">Qualifications</label>
+                        <textarea class="form-control" id="qualifications" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-12">
+                        <label for="notes" class="form-label">Additional Notes</label>
+                        <textarea class="form-control" id="notes" rows="2"></textarea>
+                    </div>
+                    <div class="col-md-12">
+                        <label for="officerPhoto" class="form-label">Upload Photo</label>
+                        <input type="file" class="form-control" id="officerPhoto">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveNewOfficer">Save Officer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View/Edit/Delete Modals would go here but are omitted for brevity -->
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize DataTable for the officers table
+        const officersTable = $('#officersTable').DataTable({
+            responsive: true,
+            language: {
+                search: "Search officers:",
+                lengthMenu: "Show _MENU_ officers per page",
+                info: "Showing _START_ to _END_ of _TOTAL_ officers"
+            }
+        });
+        
+        // View switcher functionality
+        document.getElementById('cardViewBtn').addEventListener('click', function() {
+            document.getElementById('cardView').style.display = 'block';
+            document.getElementById('tableView').style.display = 'none';
+            document.getElementById('cardViewBtn').classList.add('active');
+            document.getElementById('tableViewBtn').classList.remove('active');
+        });
+        
+        document.getElementById('tableViewBtn').addEventListener('click', function() {
+            document.getElementById('cardView').style.display = 'none';
+            document.getElementById('tableView').style.display = 'block';
+            document.getElementById('cardViewBtn').classList.remove('active');
+            document.getElementById('tableViewBtn').classList.add('active');
+        });
+        
+        // Handle officer form submission
+        document.getElementById('saveNewOfficer').addEventListener('click', function() {
+            // Validate the form
+            const form = document.getElementById('addOfficerForm');
+            if (!form.checkValidity()) {
+                // Create a submit event to trigger validation UI
+                const event = new Event('submit', {
+                    bubbles: true,
+                    cancelable: true,
+                });
+                form.dispatchEvent(event);
+                return;
+            }
+            
+            // Simulate API call to save officer
+            showToast('Field officer added successfully!', 'success');
+            
+            // Close the modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addOfficerModal'));
+            modal.hide();
+            
+            // In a real app, you would reload the data or add the new officer to the table/cards here
+        });
+        
+        // Handle filter form submission
+        document.getElementById('filterForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Apply filters to DataTable
+            // This is a simplified example
+            officersTable.search(document.getElementById('nameFilter').value).draw();
+            
+            // Show notification
+            showToast('Filters applied', 'info');
+        });
+        
+        // Export to CSV button
+        document.getElementById('exportCSV').addEventListener('click', function() {
+            // In a real app, this would trigger a CSV download
+            showToast('Exporting officers list to CSV...', 'info');
+        });
+        
+        // Print button
+        document.getElementById('printList').addEventListener('click', function() {
+            window.print();
+        });
+    });
+</script>
+{% endblock %} 

@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}Enter Collections - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('field_officers_web.list_officers') }}">Field Officers</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('field_officers_web.collection_summary') }}">Collection Summary</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Enter Collections</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Enter Collections Data</h5>
+                    <a href="{{ url_for('field_officers_web.collection_summary') }}" class="btn btn-light btn-sm">
+                        <i class="fas fa-chart-bar me-1"></i> View Summary Reports
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form id="collectionForm" action="{{ url_for('field_officers_web.save_collection') }}" method="POST" class="needs-validation" novalidate>
+                        {{ csrf_token() }}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="collection_date" class="form-label">Collection Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="collection_date" name="collection_date" value="{{ today }}" required>
+                                    <div class="invalid-feedback">Please select a collection date.</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="officer_id" class="form-label">Field Officer <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="officer_id" name="officer_id" required {% if current_user.role != 'admin' %}disabled{% endif %}>
+                                        <option value="">Select Field Officer</option>
+                                        {% for officer in all_officers %}
+                                        <option value="{{ officer.id }}" {% if current_user.role != 'admin' and current_user.id == officer.id %}selected{% endif %}>
+                                            {{ officer.first_name }} {{ officer.last_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if current_user.role != 'admin' %}
+                                    <input type="hidden" name="officer_id" value="{{ current_user.id }}">
+                                    {% endif %}
+                                    <div class="invalid-feedback">Please select a field officer.</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    <label for="group_id" class="form-label">Group <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="group_id" name="group_id" required>
+                                        <option value="">Select Group</option>
+                                        {% for group in assigned_groups %}
+                                        <option value="{{ group.id }}">{{ group.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="invalid-feedback">Please select a group.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Collection Tabs -->
+                        <ul class="nav nav-tabs mb-4" id="collectionTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="service-tab" data-bs-toggle="tab" data-bs-target="#service" type="button" role="tab" aria-controls="service" aria-selected="true">
+                                    <i class="fas fa-money-bill-wave me-1"></i> Service Fees
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="registration-tab" data-bs-toggle="tab" data-bs-target="#registration" type="button" role="tab" aria-controls="registration" aria-selected="false">
+                                    <i class="fas fa-user-plus me-1"></i> Registration
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="loans-tab" data-bs-toggle="tab" data-bs-target="#loans" type="button" role="tab" aria-controls="loans" aria-selected="false">
+                                    <i class="fas fa-hand-holding-usd me-1"></i> Loans
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button" role="tab" aria-controls="projects" aria-selected="false">
+                                    <i class="fas fa-project-diagram me-1"></i> Projects
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="welfare-tab" data-bs-toggle="tab" data-bs-target="#welfare" type="button" role="tab" aria-controls="welfare" aria-selected="false">
+                                    <i class="fas fa-hands-helping me-1"></i> Welfare
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <!-- Tab Content -->
+                        <div class="tab-content p-3 border border-top-0 rounded-bottom mb-4" id="collectionTabContent">
+                            <!-- Service Fees Tab -->
+                            <div class="tab-pane fade show active" id="service" role="tabpanel" aria-labelledby="service-tab">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="service_fee_amount" class="form-label">Service Fee Amount (KES)</label>
+                                            <input type="number" class="form-control" id="service_fee_amount" name="service_fee_amount" min="0" step="50" value="500">
+                                            <small class="form-text text-muted">Standard service fee is 500 KES per group visit.</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="service_fee_notes" class="form-label">Notes</label>
+                                            <textarea class="form-control" id="service_fee_notes" name="service_fee_notes" rows="3"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Registration Tab -->
+                            <div class="tab-pane fade" id="registration" role="tabpanel" aria-labelledby="registration-tab">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="project_reg_fee" class="form-label">Project Registration (KES)</label>
+                                            <input type="number" class="form-control" id="project_reg_fee" name="project_reg_fee" min="0" step="100">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="member_reg_fee" class="form-label">Member Registration (KES)</label>
+                                            <input type="number" class="form-control" id="member_reg_fee" name="member_reg_fee" min="0" step="50">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="registration_notes" class="form-label">Registration Notes</label>
+                                    <textarea class="form-control" id="registration_notes" name="registration_notes" rows="3"></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Loans Tab -->
+                            <div class="tab-pane fade" id="loans" role="tabpanel" aria-labelledby="loans-tab">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="ukombozini_loan_amount" class="form-label">Ukombozini Loan Collection (KES)</label>
+                                            <input type="number" class="form-control" id="ukombozini_loan_amount" name="ukombozini_loan_amount" min="0" step="100">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="loan_payment_type" class="form-label">Payment Type</label>
+                                            <select class="form-select" id="loan_payment_type" name="loan_payment_type">
+                                                <option value="cash">Cash</option>
+                                                <option value="mpesa">M-Pesa</option>
+                                                <option value="bank">Bank Transfer</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="loan_notes" class="form-label">Loan Collection Notes</label>
+                                    <textarea class="form-control" id="loan_notes" name="loan_notes" rows="3" placeholder="Enter defaulters or special circumstances..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Projects Tab -->
+                            <div class="tab-pane fade" id="projects" role="tabpanel" aria-labelledby="projects-tab">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="ukombozini_project_amount" class="form-label">Ukombozini Project Fund (KES)</label>
+                                            <input type="number" class="form-control" id="ukombozini_project_amount" name="ukombozini_project_amount" min="0" step="100">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="project_type" class="form-label">Project Type</label>
+                                            <select class="form-select" id="project_type" name="project_type">
+                                                <option value="agriculture">Agriculture</option>
+                                                <option value="livestock">Livestock</option>
+                                                <option value="business">Business</option>
+                                                <option value="education">Education</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="project_notes" class="form-label">Project Notes</label>
+                                    <textarea class="form-control" id="project_notes" name="project_notes" rows="3"></textarea>
+                                </div>
+                            </div>
+                            
+                            <!-- Welfare Tab -->
+                            <div class="tab-pane fade" id="welfare" role="tabpanel" aria-labelledby="welfare-tab">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="welfare_amount" class="form-label">Welfare Collection (KES)</label>
+                                            <input type="number" class="form-control" id="welfare_amount" name="welfare_amount" min="0" step="50">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label for="welfare_purpose" class="form-label">Welfare Purpose</label>
+                                            <select class="form-select" id="welfare_purpose" name="welfare_purpose">
+                                                <option value="general">General Welfare</option>
+                                                <option value="emergency">Emergency Fund</option>
+                                                <option value="health">Health Support</option>
+                                                <option value="education">Education Support</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="welfare_notes" class="form-label">Welfare Notes</label>
+                                    <textarea class="form-control" id="welfare_notes" name="welfare_notes" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Attendance Section -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">Meeting Attendance</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Was a meeting held?</label>
+                                            <div>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="radio" name="meeting_held" id="meeting_held_yes" value="yes" checked>
+                                                    <label class="form-check-label" for="meeting_held_yes">Yes</label>
+                                                </div>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input" type="radio" name="meeting_held" id="meeting_held_no" value="no">
+                                                    <label class="form-check-label" for="meeting_held_no">No</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 attendance-percentage-container">
+                                        <div class="form-group mb-3">
+                                            <label for="attendance_percentage" class="form-label">Attendance Percentage</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" id="attendance_percentage" name="attendance_percentage" min="0" max="100" value="0">
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="meeting_notes" class="form-label">Meeting Notes</label>
+                                    <textarea class="form-control" id="meeting_notes" name="meeting_notes" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Total Collection Summary -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">Total Collection Summary</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <ul class="list-group">
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Service Fees
+                                                <span id="summary_service" class="badge bg-primary rounded-pill">0 KES</span>
+                                            </li>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Registration Fees
+                                                <span id="summary_registration" class="badge bg-primary rounded-pill">0 KES</span>
+                                            </li>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Loan Collection
+                                                <span id="summary_loan" class="badge bg-primary rounded-pill">0 KES</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <ul class="list-group">
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Project Funds
+                                                <span id="summary_project" class="badge bg-primary rounded-pill">0 KES</span>
+                                            </li>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                Welfare Funds
+                                                <span id="summary_welfare" class="badge bg-primary rounded-pill">0 KES</span>
+                                            </li>
+                                            <li class="list-group-item d-flex justify-content-between align-items-center fw-bold">
+                                                TOTAL
+                                                <span id="summary_total" class="badge bg-success rounded-pill">0 KES</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group d-flex justify-content-between">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="add_another" name="add_another" value="true">
+                                <label class="form-check-label" for="add_another">
+                                    Add another collection after saving
+                                </label>
+                            </div>
+                            <div>
+                                <button type="reset" class="btn btn-secondary me-2">
+                                    <i class="fas fa-redo me-1"></i> Reset
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i> Save Collection
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form Validation
+        const form = document.getElementById('collectionForm');
+        
+        // Attendance percentage toggle based on meeting held
+        const meetingHeldRadios = document.querySelectorAll('input[name="meeting_held"]');
+        const attendanceContainer = document.querySelector('.attendance-percentage-container');
+        const attendanceInput = document.getElementById('attendance_percentage');
+        
+        function toggleAttendance() {
+            const meetingHeld = document.getElementById('meeting_held_yes').checked;
+            if (meetingHeld) {
+                attendanceContainer.style.display = 'block';
+                attendanceInput.setAttribute('required', 'required');
+            } else {
+                attendanceContainer.style.display = 'none';
+                attendanceInput.removeAttribute('required');
+                attendanceInput.value = '0';
+            }
+        }
+        
+        meetingHeldRadios.forEach(radio => {
+            radio.addEventListener('change', toggleAttendance);
+        });
+        
+        // Initial toggle
+        toggleAttendance();
+        
+        // Handle officer selection to load groups dynamically (for admin users)
+        const officerSelect = document.getElementById('officer_id');
+        const groupSelect = document.getElementById('group_id');
+        
+        if (officerSelect && !officerSelect.disabled) {
+            officerSelect.addEventListener('change', function() {
+                const officerId = this.value;
+                if (officerId) {
+                    // Clear existing options
+                    groupSelect.innerHTML = '<option value="">Loading groups...</option>';
+                    
+                    // Fetch groups for this officer
+                    fetch(`/field-officers-web/api/officer/${officerId}/groups`)
+                        .then(response => response.json())
+                        .then(groups => {
+                            groupSelect.innerHTML = '<option value="">Select Group</option>';
+                            
+                            if (groups.length === 0) {
+                                const option = document.createElement('option');
+                                option.text = 'No groups assigned to this officer';
+                                option.disabled = true;
+                                groupSelect.add(option);
+                            } else {
+                                groups.forEach(group => {
+                                    const option = document.createElement('option');
+                                    option.value = group.id;
+                                    option.text = group.name;
+                                    groupSelect.add(option);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching groups:', error);
+                            groupSelect.innerHTML = '<option value="">Error loading groups</option>';
+                        });
+                } else {
+                    groupSelect.innerHTML = '<option value="">Select Group</option>';
+                }
+            });
+        }
+        
+        // Update collection summary dynamically
+        const serviceFeeInput = document.getElementById('service_fee_amount');
+        const projectRegInput = document.getElementById('project_reg_fee');
+        const memberRegInput = document.getElementById('member_reg_fee');
+        const loanInput = document.getElementById('ukombozini_loan_amount');
+        const projectInput = document.getElementById('ukombozini_project_amount');
+        const welfareInput = document.getElementById('welfare_amount');
+        
+        const summaryService = document.getElementById('summary_service');
+        const summaryRegistration = document.getElementById('summary_registration');
+        const summaryLoan = document.getElementById('summary_loan');
+        const summaryProject = document.getElementById('summary_project');
+        const summaryWelfare = document.getElementById('summary_welfare');
+        const summaryTotal = document.getElementById('summary_total');
+        
+        function updateSummary() {
+            const serviceAmount = parseInt(serviceFeeInput.value) || 0;
+            const projectRegAmount = parseInt(projectRegInput.value) || 0;
+            const memberRegAmount = parseInt(memberRegInput.value) || 0;
+            const loanAmount = parseInt(loanInput.value) || 0;
+            const projectAmount = parseInt(projectInput.value) || 0;
+            const welfareAmount = parseInt(welfareInput.value) || 0;
+            
+            const registrationTotal = projectRegAmount + memberRegAmount;
+            const total = serviceAmount + registrationTotal + loanAmount + projectAmount + welfareAmount;
+            
+            summaryService.textContent = `${serviceAmount} KES`;
+            summaryRegistration.textContent = `${registrationTotal} KES`;
+            summaryLoan.textContent = `${loanAmount} KES`;
+            summaryProject.textContent = `${projectAmount} KES`;
+            summaryWelfare.textContent = `${welfareAmount} KES`;
+            summaryTotal.textContent = `${total} KES`;
+        }
+        
+        // Add event listeners to all amount inputs
+        [serviceFeeInput, projectRegInput, memberRegInput, loanInput, projectInput, welfareInput].forEach(input => {
+            input.addEventListener('input', updateSummary);
+        });
+        
+        // Initial summary update
+        updateSummary();
+        
+        // Form submission validation
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        });
+    });
+</script>
+{% endblock %} 

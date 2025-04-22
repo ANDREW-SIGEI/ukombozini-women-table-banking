@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Record Tablebanking Withdrawal - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('financial.tablebanking') }}">Tablebanking</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Record Withdrawal</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">Record Tablebanking Withdrawal</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('financial.tablebanking_withdrawal') }}" class="needs-validation" novalidate>
+                        {{ csrf_token() }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="member_id" class="form-label">Member <span class="text-danger">*</span></label>
+                                <select class="form-select" id="member_id" name="member_id" required>
+                                    <option value="">Select Member</option>
+                                    {% for member in members %}
+                                        <option value="{{ member.id }}">{{ member.first_name }} {{ member.last_name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">Please select a member.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="group_id" class="form-label">Group</label>
+                                <select class="form-select" id="group_id" name="group_id">
+                                    <option value="">Select Group (Optional)</option>
+                                    {% for group in groups %}
+                                        <option value="{{ group.id }}">{{ group.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="amount" class="form-label">Amount (KES) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="amount" name="amount" min="0" step="1" required>
+                                <div class="invalid-feedback">Please enter a valid amount.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="transaction_date" class="form-label">Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="transaction_date" name="transaction_date" value="{{ today }}" required>
+                                <div class="invalid-feedback">Please select a date.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Reason for withdrawal, payment method, etc."></textarea>
+                        </div>
+                        
+                        <div id="member-info" class="alert alert-info mb-3" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">Current Balance:</h6>
+                                    <h4 id="current-balance">KES 0.00</h4>
+                                    <p class="mb-0">Last Transaction: <span id="last-transaction-date">None</span></p>
+                                </div>
+                                <div>
+                                    <i class="fas fa-info-circle fa-3x text-info"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="insufficient-balance" class="alert alert-danger mb-3" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">Warning:</h6>
+                                    <p class="mb-0">The withdrawal amount exceeds the available balance.</p>
+                                </div>
+                                <div>
+                                    <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="issue_receipt" name="issue_receipt" value="1" checked>
+                                <label class="form-check-label" for="issue_receipt">
+                                    Generate receipt for this transaction
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('financial.tablebanking') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                            <button type="submit" class="btn btn-warning" id="submit-btn">
+                                <i class="fas fa-save me-1"></i> Process Withdrawal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Quick Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            Member must have sufficient funds for withdrawal.
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            The system will check available balance automatically.
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            Include withdrawal purpose in the notes section.
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            Group selection helps with reporting and tracking.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('financial.tablebanking_transactions') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-1"></i> View Transactions
+                        </a>
+                        <a href="{{ url_for('financial.tablebanking_deposit') }}" class="btn btn-outline-success">
+                            <i class="fas fa-plus-circle me-1"></i> Record Deposit
+                        </a>
+                        <a href="{{ url_for('financial.tablebanking_members') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-users me-1"></i> View Member Accounts
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form validation
+        const form = document.querySelector('.needs-validation');
+        const submitBtn = document.getElementById('submit-btn');
+        const insufficientBalanceAlert = document.getElementById('insufficient-balance');
+        
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity() || insufficientBalanceAlert.style.display === 'block') {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        });
+        
+        // Member selection - fetch balance
+        const memberSelect = document.getElementById('member_id');
+        const memberInfo = document.getElementById('member-info');
+        const currentBalance = document.getElementById('current-balance');
+        const lastTransactionDate = document.getElementById('last-transaction-date');
+        const amountInput = document.getElementById('amount');
+        
+        memberSelect.addEventListener('change', function() {
+            const memberId = this.value;
+            if (memberId) {
+                // In a real application, fetch data from the API
+                fetch(`/api/tablebanking/member/${memberId}/balance`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            currentBalance.textContent = `KES ${data.balance.toLocaleString('en-KE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            lastTransactionDate.textContent = data.last_transaction_date || 'None';
+                            memberInfo.style.display = 'block';
+                            
+                            // Store balance for validation
+                            currentBalance.dataset.value = data.balance;
+                            checkBalance();
+                        } else {
+                            currentBalance.textContent = 'KES 0.00';
+                            lastTransactionDate.textContent = 'No previous transactions';
+                            memberInfo.style.display = 'block';
+                            currentBalance.dataset.value = 0;
+                            checkBalance();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching balance:', error);
+                        memberInfo.style.display = 'none';
+                    });
+            } else {
+                memberInfo.style.display = 'none';
+                insufficientBalanceAlert.style.display = 'none';
+            }
+        });
+        
+        // Check if withdrawal amount exceeds balance
+        function checkBalance() {
+            const amount = parseFloat(amountInput.value) || 0;
+            const balance = parseFloat(currentBalance.dataset.value) || 0;
+            
+            if (amount > balance) {
+                insufficientBalanceAlert.style.display = 'block';
+                submitBtn.disabled = true;
+            } else {
+                insufficientBalanceAlert.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // Check balance when amount changes
+        amountInput.addEventListener('input', checkBalance);
+    });
+</script>
+{% endblock %} 

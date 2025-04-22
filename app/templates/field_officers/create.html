@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Field Officer - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('field_officers_web.list_officers') }}">Field Officers</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Add New Officer</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8 mb-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">New Field Officer Details</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('field_officers_web.create_officer') }}" method="POST">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="username" name="username" required>
+                                <div class="form-text">Must be unique. Will be used for login.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="phone_number" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone_number" name="phone_number">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control" id="password" name="password" required>
+                                <div class="form-text">Minimum 8 characters recommended.</div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" value="on" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">
+                                Account Active
+                            </label>
+                            <div class="form-text">Officer will be able to log in and use the system if active.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('field_officers_web.list_officers') }}" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Field Officer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Field Officer Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>About Field Officers</strong>
+                        <p class="mb-0 mt-2">Field officers are responsible for visiting and monitoring groups, collecting fees, and submitting reports.</p>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important Note</strong>
+                        <p class="mb-0 mt-2">New field officers won't be assigned to groups automatically. You'll need to manage assignments separately.</p>
+                    </div>
+                    
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">Next Steps</h6>
+                            <p class="card-text">After creating a field officer, you can:</p>
+                            <ul>
+                                <li>Assign the officer to groups</li>
+                                <li>Set rotation schedules</li>
+                                <li>Configure performance metrics</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-generate username from first and last name
+        const firstNameInput = document.getElementById('first_name');
+        const lastNameInput = document.getElementById('last_name');
+        const usernameInput = document.getElementById('username');
+        
+        function updateUsername() {
+            if (firstNameInput.value && lastNameInput.value) {
+                const firstName = firstNameInput.value.toLowerCase();
+                const lastName = lastNameInput.value.toLowerCase();
+                usernameInput.value = firstName + '.' + lastName;
+            }
+        }
+        
+        firstNameInput.addEventListener('blur', updateUsername);
+        lastNameInput.addEventListener('blur', updateUsername);
+    });
+</script>
+{% endblock %} 

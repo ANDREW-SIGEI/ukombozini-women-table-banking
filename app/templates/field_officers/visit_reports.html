@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Field Officer Visit Reports - Ukombozini Management System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('field_officers_web.list_officers') }}">Field Officers</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Visit Reports</li>
+                </ol>
+            </nav>
+            <h1 class="mt-2">Group Visit Reports</h1>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Filter Reports</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('field_officers_web.visit_reports') }}" method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="officer_id" class="form-label">Field Officer</label>
+                            <select class="form-select" id="officer_id" name="officer_id">
+                                <option value="">All Officers</option>
+                                {% for officer in officers %}
+                                <option value="{{ officer.id }}" {% if officer_id == officer.id %}selected{% endif %}>
+                                    {{ officer.first_name }} {{ officer.last_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="group_id" class="form-label">Group</label>
+                            <select class="form-select" id="group_id" name="group_id">
+                                <option value="">All Groups</option>
+                                {% for group in groups %}
+                                <option value="{{ group.id }}" {% if group_id == group.id %}selected{% endif %}>
+                                    {{ group.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="from_date" class="form-label">From Date</label>
+                            <input type="date" class="form-control" id="from_date" name="from_date" value="{{ from_date }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="to_date" class="form-label">To Date</label>
+                            <input type="date" class="form-control" id="to_date" name="to_date" value="{{ to_date }}">
+                        </div>
+                        <div class="col-12 mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-1"></i> Apply Filters
+                            </button>
+                            <a href="{{ url_for('field_officers_web.visit_reports') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> Clear Filters
+                            </a>
+                            <div class="float-end">
+                                <a href="{{ url_for('field_officers_web.collection_summary') }}" class="btn btn-info me-2">
+                                    <i class="fas fa-money-bill-wave me-1"></i> Collection Summary
+                                </a>
+                                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newReportModal">
+                                    <i class="fas fa-plus me-1"></i> New Report
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Visit Reports</h5>
+                </div>
+                <div class="card-body">
+                    {% if reports %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Visit Date</th>
+                                    <th>Field Officer</th>
+                                    <th>Group</th>
+                                    <th>Meeting Held</th>
+                                    <th>Attendance</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in reports %}
+                                <tr>
+                                    <td>{{ report.visit_date.strftime('%d %b, %Y') if report.visit_date else 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ url_for('field_officers_web.view_officer', id=report.officer_id) }}">
+                                            {{ report.officer.first_name }} {{ report.officer.last_name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('groups.view_group', id=report.group_id) }}">
+                                            {{ report.group.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if report.meeting_held %}
+                                        <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ report.attendance_percentage|int }}%</td>
+                                    <td>
+                                        {% if report.status == 'completed' %}
+                                        <span class="badge bg-success">Completed</span>
+                                        {% elif report.status == 'pending' %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ report.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('field_officers_web.view_report', id=report.id) }}" class="btn btn-sm btn-outline-primary" title="View Report">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Edit Report"
+                                                    data-bs-toggle="modal" data-bs-target="#editReportModal{{ report.id }}">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" title="Delete Report"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteReportModal{{ report.id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade" id="deleteReportModal{{ report.id }}" tabindex="-1" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Confirm Delete</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>Are you sure you want to delete this visit report? This action cannot be undone.</p>
+                                                        <p class="fw-bold">Group: {{ report.group.name }}</p>
+                                                        <p class="fw-bold">Visit Date: {{ report.visit_date.strftime('%d %b, %Y') if report.visit_date else 'N/A' }}</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <form action="{{ url_for('field_officers_web.delete_report', id=report.id) }}" method="POST">
+                                                            <button type="submit" class="btn btn-danger">Delete Report</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if pagination.pages > 1 %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('field_officers_web.visit_reports', page=pagination.prev_num, officer_id=officer_id, group_id=group_id, from_date=from_date, to_date=to_date) if pagination.has_prev else '#' }}" {% if not pagination.has_prev %}aria-disabled="true"{% endif %}>Previous</a>
+                            </li>
+                            {% for page_num in range(1, pagination.pages + 1) %}
+                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('field_officers_web.visit_reports', page=page_num, officer_id=officer_id, group_id=group_id, from_date=from_date, to_date=to_date) }}">{{ page_num }}</a>
+                            </li>
+                            {% endfor %}
+                            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('field_officers_web.visit_reports', page=pagination.next_num, officer_id=officer_id, group_id=group_id, from_date=from_date, to_date=to_date) if pagination.has_next else '#' }}" {% if not pagination.has_next %}aria-disabled="true"{% endif %}>Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No visit reports found matching your criteria.</p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newReportModal">
+                            <i class="fas fa-plus me-1"></i> Create New Report
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Report Modal -->
+<div class="modal fade" id="newReportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New Visit Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('field_officers_web.create_report') }}" method="POST">
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="officer_id_new" class="form-label">Field Officer</label>
+                            <select class="form-select" id="officer_id_new" name="officer_id" required>
+                                <option value="">-- Select Field Officer --</option>
+                                {% for officer in officers %}
+                                <option value="{{ officer.id }}">{{ officer.first_name }} {{ officer.last_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="group_id_new" class="form-label">Group</label>
+                            <select class="form-select" id="group_id_new" name="group_id" required>
+                                <option value="">-- Select Group --</option>
+                                {% for group in groups %}
+                                <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="visit_date" class="form-label">Visit Date</label>
+                            <input type="date" class="form-control" id="visit_date" name="visit_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="meeting_held" class="form-label">Was Meeting Held?</label>
+                            <select class="form-select" id="meeting_held" name="meeting_held" required>
+                                <option value="true">Yes</option>
+                                <option value="false">No</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="attendance_percentage" class="form-label">Attendance Percentage</label>
+                            <input type="number" class="form-control" id="attendance_percentage" name="attendance_percentage" min="0" max="100" value="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status" required>
+                                <option value="completed">Completed</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="report_content" class="form-label">Report Content</label>
+                        <textarea class="form-control" id="report_content" name="report_content" rows="5" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="challenges" class="form-label">Challenges & Issues</label>
+                        <textarea class="form-control" id="challenges" name="challenges" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="recommendations" class="form-label">Recommendations</label>
+                        <textarea class="form-control" id="recommendations" name="recommendations" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default date for visit date to today
+        const visitDateField = document.getElementById('visit_date');
+        const today = new Date();
+        const dateString = today.toISOString().split('T')[0];
+        visitDateField.value = dateString;
+        
+        // Toggle attendance percentage based on meeting held
+        const meetingHeldSelect = document.getElementById('meeting_held');
+        const attendanceField = document.getElementById('attendance_percentage');
+        
+        meetingHeldSelect.addEventListener('change', function() {
+            if (this.value === 'false') {
+                attendanceField.value = 0;
+                attendanceField.disabled = true;
+            } else {
+                attendanceField.disabled = false;
+            }
+        });
+    });
+</script>
+{% endblock %} 

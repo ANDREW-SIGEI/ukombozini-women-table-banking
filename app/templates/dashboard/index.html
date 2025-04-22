@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Ukombozini Management System{% endblock %}
+
+{% block styles %}
+<style>
+    .stat-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .chart-container {
+        height: 300px;
+        margin-bottom: 20px;
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .progress {
+        height: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .activity-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    
+    .badge-loan {
+        background-color: #4e73df;
+    }
+    
+    .badge-saving {
+        background-color: #1cc88a;
+    }
+    
+    .badge-collection {
+        background-color: #f6c23e;
+    }
+    
+    .badge-meeting {
+        background-color: #36b9cc;
+    }
+    
+    @media (max-width: 767.98px) {
+        .chart-container {
+            height: 250px;
+        }
+        
+        .stats-row .col-md-6:not(:last-child) {
+            margin-bottom: 15px;
+        }
+    }
+    
+    @media (max-width: 575.98px) {
+        .chart-container {
+            height: 200px;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+        }
+        
+        .stats-title {
+            font-size: 0.8rem;
+        }
+        
+        .stats-value {
+            font-size: 1.2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4 mb-4">Dashboard</h1>
+    
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-left-primary h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1 stats-title">
+                                Total Loans</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 stats-value" id="total-loans">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-left-success h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1 stats-title">
+                                Total Savings (KSh)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 stats-value" id="total-savings">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-piggy-bank fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-left-warning h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1 stats-title">
+                                Collections</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 stats-value" id="total-collections">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-left-info h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1 stats-title">
+                                Upcoming Meetings</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 stats-value" id="upcoming-meetings">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
+            <div class="chart-container">
+                <h4 class="card-title">Loan Trends</h4>
+                <div class="chart-responsive">
+                    <canvas id="loanTrendsChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="chart-container">
+                <h4 class="card-title">Collections Distribution</h4>
+                <div class="chart-responsive">
+                    <canvas id="collectionsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Financial Health and Recent Activity -->
+    <div class="row stats-row">
+        <div class="col-lg-6 col-md-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex align-items-center">
+                    <i class="fas fa-chart-line mr-1"></i>
+                    <span class="card-title mb-0">Financial Health</span>
+                </div>
+                <div class="card-body">
+                    <h5 class="stats-title">Loan Repayment Rate</h5>
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-success" role="progressbar" id="loan-repayment-rate"
+                            style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    
+                    <h5 class="stats-title">Savings Growth Rate</h5>
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-info" role="progressbar" id="savings-growth-rate"
+                            style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    
+                    <h5 class="stats-title">Default Rate</h5>
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-danger" role="progressbar" id="default-rate"
+                            style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 col-md-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex align-items-center">
+                    <i class="fas fa-bell mr-1"></i>
+                    <span class="card-title mb-0">Recent Activity</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <div id="recent-activity-container">
+                            <!-- Will be populated by JavaScript -->
+                            <div class="text-center p-3" id="activity-loader">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set up responsive chart options
+        Chart.defaults.responsive = true;
+        Chart.defaults.maintainAspectRatio = false;
+        
+        // Fetch dashboard overview data
+        fetch('/api/dashboard/overview')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total-loans').textContent = data.total_loans;
+                document.getElementById('total-savings').textContent = new Intl.NumberFormat('en-KE').format(data.total_savings);
+                document.getElementById('total-collections').textContent = data.total_collections;
+                document.getElementById('upcoming-meetings').textContent = data.upcoming_meetings;
+            })
+            .catch(error => {
+                console.error('Error fetching overview data:', error);
+            });
+        
+        // Fetch and create loans trend chart
+        fetch('/api/dashboard/loans-trend')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('loanTrendsChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Loan Amount (KSh)',
+                            data: data.data,
+                            backgroundColor: 'rgba(78, 115, 223, 0.2)',
+                            borderColor: 'rgba(78, 115, 223, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: window.innerWidth < 768 ? 'bottom' : 'top'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return 'KSh ' + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching loan trend data:', error);
+            });
+        
+        // Fetch and create collections chart
+        fetch('/api/dashboard/collections-summary')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('collectionsChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            data: data.data,
+                            backgroundColor: [
+                                'rgba(246, 194, 62, 0.8)',
+                                'rgba(28, 200, 138, 0.8)',
+                                'rgba(54, 185, 204, 0.8)',
+                                'rgba(78, 115, 223, 0.8)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: window.innerWidth < 768 ? 'bottom' : 'right',
+                                labels: {
+                                    boxWidth: window.innerWidth < 576 ? 10 : 20,
+                                    font: {
+                                        size: window.innerWidth < 576 ? 10 : 12
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching collections data:', error);
+            });
+        
+        // Fetch financial health data
+        fetch('/api/dashboard/financial-health')
+            .then(response => response.json())
+            .then(data => {
+                const loanRepaymentRate = document.getElementById('loan-repayment-rate');
+                loanRepaymentRate.style.width = data.loan_repayment_rate + '%';
+                loanRepaymentRate.setAttribute('aria-valuenow', data.loan_repayment_rate);
+                
+                const savingsGrowthRate = document.getElementById('savings-growth-rate');
+                savingsGrowthRate.style.width = data.savings_growth_rate + '%';
+                savingsGrowthRate.setAttribute('aria-valuenow', data.savings_growth_rate);
+                
+                const defaultRate = document.getElementById('default-rate');
+                defaultRate.style.width = data.default_rate + '%';
+                defaultRate.setAttribute('aria-valuenow', data.default_rate);
+            })
+            .catch(error => {
+                console.error('Error fetching financial health data:', error);
+            });
+        
+        // Fetch recent activity
+        fetch('/api/dashboard/recent-activity')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('recent-activity-container');
+                document.getElementById('activity-loader').style.display = 'none';
+                
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="text-center p-3">No recent activity</div>';
+                    return;
+                }
+                
+                data.forEach(activity => {
+                    const activityItem = document.createElement('div');
+                    activityItem.className = 'activity-item';
+                    
+                    const badgeClass = `badge badge-${activity.type} text-white mr-2`;
+                    
+                    activityItem.innerHTML = `
+                        <span class="${badgeClass}">${activity.type}</span>
+                        <div class="ms-2">
+                            <strong>${activity.description}</strong>
+                            <small class="text-muted d-block">${activity.time}</small>
+                        </div>
+                    `;
+                    
+                    container.appendChild(activityItem);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching recent activity data:', error);
+                document.getElementById('activity-loader').style.display = 'none';
+                document.getElementById('recent-activity-container').innerHTML = 
+                    '<div class="text-center p-3">Failed to load activity data</div>';
+            });
+        
+        // Handle window resize for responsive charts
+        window.addEventListener('resize', function() {
+            let charts = Chart.instances;
+            for (let i = 0; i < charts.length; i++) {
+                charts[i].resize();
+            }
+        });
+    });
+</script>
+{% endblock %} 

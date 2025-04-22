@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+
+{% block title %}Member Dashboard - Ukombozini Management System{% endblock %}
+
+{% block styles %}
+<style>
+    .stat-card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .chart-container {
+        height: 300px;
+        margin-bottom: 20px;
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .badge-loan {
+        background-color: #4e73df;
+    }
+    
+    .badge-saving {
+        background-color: #1cc88a;
+    }
+    
+    .badge-collection {
+        background-color: #f6c23e;
+    }
+    
+    .badge-meeting {
+        background-color: #36b9cc;
+    }
+    
+    .activity-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #f5f5f5;
+    }
+    
+    @media (max-width: 767.98px) {
+        .chart-container {
+            height: 250px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 pt-4">
+    <h1 class="h3 mb-2 text-gray-800">Member Dashboard</h1>
+    <p class="mb-4">Welcome to your personal dashboard. Monitor your loans, savings, and upcoming meetings.</p>
+
+    <!-- Member Stats Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Current Loans</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="current-loans-count">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-money-bill-wave fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Savings Balance</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="savings-balance">KSh 0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-piggy-bank fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Next Payment</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="next-payment">N/A</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2 stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Upcoming Meetings</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="upcoming-meetings">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-handshake fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Loans Overview -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">My Loans</h6>
+                    <a href="/loans/apply" class="btn btn-sm btn-primary">Apply for Loan</a>
+                </div>
+                <div class="card-body">
+                    <div id="no-loans" class="text-center py-4 d-none">
+                        <p class="text-gray-500 mb-0">You don't have any active loans.</p>
+                        <a href="/loans/apply" class="btn btn-primary mt-3">Apply for a Loan</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="loans-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Loan Type</th>
+                                    <th>Amount</th>
+                                    <th>Balance</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="loans-body">
+                                <!-- Loans will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Savings Activity -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Savings Activity</h6>
+                    <a href="/savings/deposit" class="btn btn-sm btn-success">Deposit</a>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="savingsChart"></canvas>
+                    </div>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered" id="savings-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Transaction</th>
+                                    <th>Amount</th>
+                                    <th>Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody id="savings-body">
+                                <!-- Savings transactions will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Upcoming Meetings -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Upcoming Meetings</h6>
+                </div>
+                <div class="card-body">
+                    <div id="no-meetings" class="text-center py-4 d-none">
+                        <p class="text-gray-500 mb-0">No upcoming meetings scheduled.</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="meetings-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Group</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Location</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="meetings-body">
+                                <!-- Upcoming meetings will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Schedule -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Payment Schedule</h6>
+                </div>
+                <div class="card-body">
+                    <div id="no-payments" class="text-center py-4 d-none">
+                        <p class="text-gray-500 mb-0">No upcoming payments scheduled.</p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="payments-table" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Due Date</th>
+                                    <th>Loan</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payments-body">
+                                <!-- Payment schedule will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Fetch member dashboard data when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchDashboardData();
+    });
+
+    function fetchDashboardData() {
+        fetch('/api/dashboard/member', {
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            updateDashboard(data);
+        })
+        .catch(error => {
+            console.error('Error fetching dashboard data:', error);
+        });
+    }
+
+    function updateDashboard(data) {
+        // Update stats cards
+        document.getElementById('current-loans-count').textContent = data.loans.count;
+        document.getElementById('savings-balance').textContent = 'KSh ' + new Intl.NumberFormat().format(data.savings.balance);
+        document.getElementById('upcoming-meetings').textContent = data.meetings.count;
+        
+        if (data.next_payment) {
+            document.getElementById('next-payment').textContent = new Date(data.next_payment.due_date).toLocaleDateString();
+        }
+
+        // Populate loans table
+        const loansBody = document.getElementById('loans-body');
+        loansBody.innerHTML = '';
+        
+        if (data.loans.count === 0) {
+            document.getElementById('no-loans').classList.remove('d-none');
+            document.getElementById('loans-table').classList.add('d-none');
+        } else {
+            document.getElementById('no-loans').classList.add('d-none');
+            document.getElementById('loans-table').classList.remove('d-none');
+            
+            data.loans.data.forEach(loan => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${loan.type}</td>
+                    <td>KSh ${new Intl.NumberFormat().format(loan.amount)}</td>
+                    <td>KSh ${new Intl.NumberFormat().format(loan.balance)}</td>
+                    <td>${loan.due_date ? new Date(loan.due_date).toLocaleDateString() : 'N/A'}</td>
+                    <td><span class="badge ${getStatusBadgeClass(loan.status)}">${loan.status}</span></td>
+                    <td>
+                        <a href="/loans/${loan.id}" class="btn btn-sm btn-info">Details</a>
+                        <a href="/loans/${loan.id}/pay" class="btn btn-sm btn-success">Pay</a>
+                    </td>
+                `;
+                loansBody.appendChild(row);
+            });
+        }
+
+        // Populate savings transactions
+        const savingsBody = document.getElementById('savings-body');
+        savingsBody.innerHTML = '';
+        
+        data.savings.recent_transactions.forEach(transaction => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${new Date(transaction.date).toLocaleDateString()}</td>
+                <td>${transaction.type}</td>
+                <td>KSh ${new Intl.NumberFormat().format(transaction.amount)}</td>
+                <td>KSh ${new Intl.NumberFormat().format(transaction.balance)}</td>
+            `;
+            savingsBody.appendChild(row);
+        });
+
+        // Populate meetings table
+        const meetingsBody = document.getElementById('meetings-body');
+        meetingsBody.innerHTML = '';
+        
+        if (data.meetings.count === 0) {
+            document.getElementById('no-meetings').classList.remove('d-none');
+            document.getElementById('meetings-table').classList.add('d-none');
+        } else {
+            document.getElementById('no-meetings').classList.add('d-none');
+            document.getElementById('meetings-table').classList.remove('d-none');
+            
+            data.meetings.data.forEach(meeting => {
+                const meetingDate = new Date(meeting.date);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${meeting.group}</td>
+                    <td>${meetingDate.toLocaleDateString()}</td>
+                    <td>${meeting.time}</td>
+                    <td>${meeting.location}</td>
+                    <td>
+                        <a href="/meetings/${meeting.id}" class="btn btn-sm btn-info">Details</a>
+                    </td>
+                `;
+                meetingsBody.appendChild(row);
+            });
+        }
+
+        // Populate payment schedule
+        const paymentsBody = document.getElementById('payments-body');
+        paymentsBody.innerHTML = '';
+        
+        if (data.payment_schedule.length === 0) {
+            document.getElementById('no-payments').classList.remove('d-none');
+            document.getElementById('payments-table').classList.add('d-none');
+        } else {
+            document.getElementById('no-payments').classList.add('d-none');
+            document.getElementById('payments-table').classList.remove('d-none');
+            
+            data.payment_schedule.forEach(payment => {
+                const paymentDate = new Date(payment.due_date);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${paymentDate.toLocaleDateString()}</td>
+                    <td>${payment.loan_name}</td>
+                    <td>KSh ${new Intl.NumberFormat().format(payment.amount)}</td>
+                    <td><span class="badge ${getPaymentStatusBadgeClass(payment.status)}">${payment.status}</span></td>
+                    <td>
+                        <a href="/loans/${payment.loan_id}/pay" class="btn btn-sm btn-success">Pay</a>
+                    </td>
+                `;
+                paymentsBody.appendChild(row);
+            });
+        }
+
+        // Initialize Savings Chart
+        const chartData = {
+            labels: data.savings.chart_data.map(item => item.month),
+            data: data.savings.chart_data.map(item => item.amount)
+        };
+        initializeSavingsChart(chartData);
+    }
+
+    function getStatusBadgeClass(status) {
+        switch(status) {
+            case 'ACTIVE':
+                return 'badge-success';
+            case 'PENDING':
+                return 'badge-warning';
+            case 'OVERDUE':
+                return 'badge-danger';
+            case 'COMPLETED':
+                return 'badge-info';
+            default:
+                return 'badge-secondary';
+        }
+    }
+
+    function getPaymentStatusBadgeClass(status) {
+        switch(status) {
+            case 'PAID':
+                return 'badge-success';
+            case 'PENDING':
+                return 'badge-warning';
+            case 'OVERDUE':
+                return 'badge-danger';
+            default:
+                return 'badge-secondary';
+        }
+    }
+
+    function initializeSavingsChart(chartData) {
+        const ctx = document.getElementById('savingsChart').getContext('2d');
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Savings Balance',
+                    data: chartData.data,
+                    backgroundColor: 'rgba(28, 200, 138, 0.2)',
+                    borderColor: 'rgba(28, 200, 138, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(28, 200, 138, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(28, 200, 138, 1)',
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'KSh ' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'KSh ' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %} 

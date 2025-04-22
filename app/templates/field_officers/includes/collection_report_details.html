@@ -1,0 +1,254 @@
+<!-- Report Overview -->
+<div class="row mb-4">
+    <div class="col-md-12 mb-3">
+        <div class="d-flex justify-content-between">
+            <h5>Collection Summary</h5>
+            <div>
+                <button class="btn btn-sm btn-outline-primary me-2" onclick="window.print()"><i class="fas fa-print me-1"></i> Print</button>
+                <button class="btn btn-sm btn-outline-success" id="exportExcel"><i class="fas fa-file-excel me-1"></i> Export</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Totals Summary Cards -->
+    <div class="col-md-12">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light h-100">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Total Amount Collected</h6>
+                        <h3 class="text-success">{{ "{:,.2f}".format(report_data['Totals']['Total Amount Collected']) }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light h-100">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Groups Attended</h6>
+                        <h3>{{ report_data['Groups Attended'] }}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-light h-100">
+                    <div class="card-body text-center">
+                        <h6 class="text-muted">Avg. Collection per Group</h6>
+                        <h3>{{ "{:,.2f}".format(report_data['Analytics']['Average Collection per Group']) }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Collection Breakdown -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h5 class="mb-3">Collection Breakdown</h5>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fee Type</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Service Fee</td>
+                        <td class="text-end">{{ "{:,.2f}".format(report_data['Totals']['Service Fee']) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Project Registration Fee</td>
+                        <td class="text-end">{{ "{:,.2f}".format(report_data['Totals']['Project Registration Fee']) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Member Registration Fee</td>
+                        <td class="text-end">{{ "{:,.2f}".format(report_data['Totals']['Member Registration Fee']) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Ukombozini Loan Collection</td>
+                        <td class="text-end">{{ "{:,.2f}".format(report_data['Totals']['Ukombozini Loan Collection']) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Ukombozini Project Amount</td>
+                        <td class="text-end">{{ "{:,.2f}".format(report_data['Totals']['Ukombozini Project Amount']) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Welfare Total</td>
+                        <td class="text-end">{{ "{:,.2f}".format(report_data['Totals']['Welfare Total']) }}</td>
+                    </tr>
+                    <tr class="table-dark">
+                        <th>Total Amount Collected</th>
+                        <th class="text-end">{{ "{:,.2f}".format(report_data['Totals']['Total Amount Collected']) }}</th>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Groups Detail -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h5 class="mb-3">Group Details</h5>
+        {% if report_data['Group Details']|length > 0 %}
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Group Name</th>
+                        <th class="text-center">Attendees</th>
+                        <th class="text-end">Service Fee</th>
+                        <th class="text-end">Project Reg</th>
+                        <th class="text-end">Member Reg</th>
+                        <th class="text-end">Loan Collection</th>
+                        <th class="text-end">Project Fund</th>
+                        <th class="text-end">Welfare</th>
+                        <th class="text-end">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in report_data['Group Details'] %}
+                    <tr>
+                        <td>{{ group['Group Name'] }}</td>
+                        <td class="text-center">{{ group['Attendees'] }}</td>
+                        <td class="text-end">{{ "{:,.2f}".format(group['Service Fee']) }}</td>
+                        <td class="text-end">{{ "{:,.2f}".format(group['Project Reg Fee']) }}</td>
+                        <td class="text-end">{{ "{:,.2f}".format(group['Member Reg Fee']) }}</td>
+                        <td class="text-end">{{ "{:,.2f}".format(group['Ukombozini Loan Collected']) }}</td>
+                        <td class="text-end">{{ "{:,.2f}".format(group['Ukombozini Project Fund']) }}</td>
+                        <td class="text-end">{{ "{:,.2f}".format(group['Welfare Collected']) }}</td>
+                        <td class="text-end fw-bold">{{ "{:,.2f}".format(group['Group Total']) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-warning">
+            <p class="mb-0">No group details found for this date.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Analytics -->
+<div class="row">
+    <div class="col-md-12">
+        <h5 class="mb-3">Analytics</h5>
+        <div class="card bg-light">
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <p class="text-muted mb-1">Average Collection per Group</p>
+                        <p class="fw-bold">{{ "{:,.2f}".format(report_data['Analytics']['Average Collection per Group']) }}</p>
+                    </div>
+                    {% if report_data['Analytics']['Most Paying Group'] %}
+                    <div class="col-md-4">
+                        <p class="text-muted mb-1">Most Paying Group</p>
+                        <p class="fw-bold">{{ report_data['Analytics']['Most Paying Group'] }}</p>
+                    </div>
+                    {% endif %}
+                    {% if report_data['Analytics']['Least Paying Group'] %}
+                    <div class="col-md-4">
+                        <p class="text-muted mb-1">Least Paying Group</p>
+                        <p class="fw-bold">{{ report_data['Analytics']['Least Paying Group'] }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- New analytics metrics -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <p class="text-muted mb-1">Collection Efficiency</p>
+                        <p class="fw-bold">{{ "{:.1f}%".format(report_data['Analytics']['Collection Efficiency']) }}</p>
+                    </div>
+                </div>
+                
+                <!-- Contribution Percentages -->
+                {% if report_data['Analytics']['Contribution Percentages'] %}
+                <hr>
+                <h6 class="mb-3">Revenue Contribution by Category</h6>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="progress" style="height: 30px;">
+                            {% set service_fee_pct = report_data['Analytics']['Contribution Percentages']['Service Fee']|int %}
+                            <div class="progress-bar bg-primary" role="progressbar" 
+                                 style="width: {{ service_fee_pct }}%;" 
+                                 aria-valuenow="{{ service_fee_pct }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                                Service Fee
+                            </div>
+                            
+                            {% set project_reg_pct = report_data['Analytics']['Contribution Percentages']['Project Registration']|int %}
+                            <div class="progress-bar bg-success" role="progressbar" 
+                                 style="width: {{ project_reg_pct }}%;" 
+                                 aria-valuenow="{{ project_reg_pct }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                                Project Reg
+                            </div>
+                            
+                            {% set member_reg_pct = report_data['Analytics']['Contribution Percentages']['Member Registration']|int %}
+                            <div class="progress-bar bg-info" role="progressbar" 
+                                 style="width: {{ member_reg_pct }}%;" 
+                                 aria-valuenow="{{ member_reg_pct }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                                Member Reg
+                            </div>
+                            
+                            {% set loan_pct = report_data['Analytics']['Contribution Percentages']['Ukombozini Loan']|int %}
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: {{ loan_pct }}%;" 
+                                 aria-valuenow="{{ loan_pct }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                                Loans
+                            </div>
+                            
+                            {% set project_pct = report_data['Analytics']['Contribution Percentages']['Ukombozini Project']|int %}
+                            <div class="progress-bar bg-danger" role="progressbar" 
+                                 style="width: {{ project_pct }}%;" 
+                                 aria-valuenow="{{ project_pct }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                                Projects
+                            </div>
+                            
+                            {% set welfare_pct = report_data['Analytics']['Contribution Percentages']['Welfare']|int %}
+                            <div class="progress-bar bg-secondary" role="progressbar" 
+                                 style="width: {{ welfare_pct }}%;" 
+                                 aria-valuenow="{{ welfare_pct }}" 
+                                 aria-valuemin="0" aria-valuemax="100">
+                                Welfare
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-12">
+                        <div class="d-flex flex-wrap">
+                            <div class="me-3 mb-2">
+                                <span class="badge bg-primary me-1">■</span> Service Fee: {{ "{:.1f}%".format(report_data['Analytics']['Contribution Percentages']['Service Fee']) }}
+                            </div>
+                            <div class="me-3 mb-2">
+                                <span class="badge bg-success me-1">■</span> Project Reg: {{ "{:.1f}%".format(report_data['Analytics']['Contribution Percentages']['Project Registration']) }}
+                            </div>
+                            <div class="me-3 mb-2">
+                                <span class="badge bg-info me-1">■</span> Member Reg: {{ "{:.1f}%".format(report_data['Analytics']['Contribution Percentages']['Member Registration']) }}
+                            </div>
+                            <div class="me-3 mb-2">
+                                <span class="badge bg-warning me-1">■</span> Loans: {{ "{:.1f}%".format(report_data['Analytics']['Contribution Percentages']['Ukombozini Loan']) }}
+                            </div>
+                            <div class="me-3 mb-2">
+                                <span class="badge bg-danger me-1">■</span> Projects: {{ "{:.1f}%".format(report_data['Analytics']['Contribution Percentages']['Ukombozini Project']) }}
+                            </div>
+                            <div class="me-3 mb-2">
+                                <span class="badge bg-secondary me-1">■</span> Welfare: {{ "{:.1f}%".format(report_data['Analytics']['Contribution Percentages']['Welfare']) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div> 

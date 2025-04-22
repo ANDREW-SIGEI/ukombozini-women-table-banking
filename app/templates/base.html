@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ukombozini Management System{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block styles %}{% endblock %}
+    <style>
+        /* Additional responsive styles for base template */
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+            
+            .dropdown-menu {
+                border: none;
+                background-color: rgba(0,0,0,0.02);
+                padding-left: 1rem;
+            }
+            
+            .navbar-nav .dropdown-item {
+                padding: 0.5rem 1rem;
+            }
+        }
+        
+        /* Offline status indicator styles */
+        .connection-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-online {
+            background-color: #28a745;
+        }
+        
+        .status-offline {
+            background-color: #dc3545;
+        }
+        
+        .network-status {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 1050;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">UKOMBOZINI</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                            <i class="fas fa-chart-line"></i> Dashboard
+                        </a>
+                    </li>
+                    
+                    <!-- User & Group Management -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userGroupDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-users"></i> User & Group Management
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('main.members') }}">Member Management</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('groups.list_groups') }}">Groups Registration</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.field_officers') }}">Field Officers</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Tablebanking Financial Management -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="financialDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-money-bill"></i> Tablebanking Financial Management
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('main.savings') }}">Savings Management</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.loans') }}">Loan Management</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.loan_collections') }}">Loan Collections</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.dividends') }}">Dividends & Interest</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.accounting') }}">Accounting</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Booster Collections -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="collectionsDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-box"></i> Booster Collections
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('main.agriculture_collection') }}">Agriculture Collection</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.school_fees_collection') }}">School Fees Collection</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Reports & Analytics -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-chart-bar"></i> Reports & Analytics
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('main.analytics_dashboard') }}">Analytics Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.tablebanking_reports') }}">Table Banking Reports</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.loan_reports') }}">Loan Reports</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Ukombozini Management -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="managementDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-cog"></i> Ukombozini Management
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('main.management_overview') }}">Overview</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.settings') }}">Settings</a></li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Ukombozini Financial Management -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="financialMgmtDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-hand-holding-usd"></i> Ukombozini Financial Management
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('main.products') }}">Products</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.group_loan') }}">Group Loan</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.individual_loan') }}">Individual Loan</a></li>
+                        </ul>
+                    </li>
+                    
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav d-flex flex-row">
+                    <!-- Network Status Indicator -->
+                    <li class="nav-item me-3 d-flex align-items-center" id="connection-status-container">
+                        <span class="connection-status status-online" id="connection-status"></span>
+                        <span class="text-light d-none d-sm-inline" id="connection-text">Online</span>
+                    </li>
+                    
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <span class="d-none d-lg-inline">{{ current_user.username }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('main.user_profile') }}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('main.settings') }}">Settings</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.notifications') }}" id="notificationsNav">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge rounded-pill bg-danger d-none">0</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">
+                            <i class="fas fa-sign-in-alt me-1"></i> Login
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.register') }}">
+                            <i class="fas fa-user-plus me-1"></i> Register
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mt-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-dark text-white">
+        <div class="container text-center">
+            <div class="row">
+                <div class="col-md-6 text-md-start">
+                    <p class="mb-0">&copy; 2025 Ukombozini Management System</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">Version 1.0</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap and core JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/utilities.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/offline-manager.js') }}"></script>
+
+    <!-- Handle mobile dropdown menu closing after clicking an item -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-close the mobile menu when a nav item is clicked
+            const navLinks = document.querySelectorAll('.navbar-nav .nav-link:not(.dropdown-toggle)');
+            const menuToggle = document.getElementById('navbarNav');
+            const bsCollapse = new bootstrap.Collapse(menuToggle, {toggle: false});
+            
+            navLinks.forEach(function(link) {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth < 992 && menuToggle.classList.contains('show')) {
+                        bsCollapse.hide();
+                    }
+                });
+            });
+            
+            // Update connection status indicator
+            const connectionStatus = document.getElementById('connection-status');
+            const connectionText = document.getElementById('connection-text');
+            
+            function updateConnectionStatus() {
+                if (navigator.onLine) {
+                    connectionStatus.classList.remove('status-offline');
+                    connectionStatus.classList.add('status-online');
+                    connectionText.textContent = 'Online';
+                } else {
+                    connectionStatus.classList.remove('status-online');
+                    connectionStatus.classList.add('status-offline');
+                    connectionText.textContent = 'Offline';
+                }
+            }
+            
+            // Set initial status
+            updateConnectionStatus();
+            
+            // Update status when online/offline events fire
+            window.addEventListener('online', updateConnectionStatus);
+            window.addEventListener('offline', updateConnectionStatus);
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html> 
