@@ -1,0 +1,10 @@
+[0;1;32m●[0m postgresql.service - PostgreSQL RDBMS
+     Loaded: loaded (/lib/systemd/system/postgresql.service; enabled; vendor preset: enabled)
+     Active: [0;1;32mactive (exited)[0m since Sat 2025-02-15 17:25:21 EAT; 1h 51min ago
+   Main PID: 1852 (code=exited, status=0/SUCCESS)
+      Tasks: 0 (limit: 9260)
+     Memory: 0B
+     CGroup: /system.slice/postgresql.service
+
+Gur 15 17:25:21 andrew-HP-EliteBook-x360-1030-G2 systemd[1]: Starting PostgreSQL RDBMS...
+Gur 15 17:25:21 andrew-HP-EliteBook-x360-1030-G2 systemd[1]: Finished PostgreSQL RDBMS.

@@ -1,0 +1,13 @@
+{
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 5432,
+            "driver": "PostgreSQL",
+            "name": "Table Banking System",
+            "database": "table_banking_system",
+            "username": "andrew"
+        }
+    ]
+}
